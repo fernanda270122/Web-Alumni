@@ -51,17 +51,10 @@ elif EN_PYTHONANYWHERE:
 
 else:
     # --- MODO LOCAL (TU PC) ---
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'alumni_db',
-        'USER': 'javieradmin',
-        'PASSWORD': '12345',
-        'HOST': 'localhost',
-        'PORT': '5432',
-        'OPTIONS': {
-            'client_encoding': 'UTF8', 
-        },
-    }
+    DATABASES['default'] = dj_database_url.config(
+        default='postgresql://ciclo_circular_db_user:Thj4j2hENjSvAD7QSY22igjyzSIwRmkv@dpg-d6o2fbk50q8c73dc9veg-a.oregon-postgres.render.com/ciclo_circular_db',
+        conn_max_age=600
+    )
 
 
 # --- 3. APLICACIONES Y MIDDLEWARE ---
