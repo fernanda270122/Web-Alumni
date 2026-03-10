@@ -1,0 +1,560 @@
+{% extends 'base_public.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 pt-6 md:pt-0 pb-8" x-data="{ tabActiva: 'general' }">
+
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 mb-6 flex overflow-x-auto hide-scrollbar gap-2">
+        <button @click="tabActiva = 'general'" 
+                :class="{'bg-primary text-white shadow-md': tabActiva === 'general', 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800': tabActiva !== 'general'}"
+                class="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap">
+            <i class="fa-solid fa-user-check"></i> General
+        </button>
+
+        <button @click="tabActiva = 'profesional'" 
+                :class="{'bg-blue-600 text-white shadow-md': tabActiva === 'profesional', 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800': tabActiva !== 'profesional'}"
+                class="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap">
+            <i class="fa-solid fa-file-pdf"></i> CV y Ofertas
+        </button>
+
+        <button @click="tabActiva = 'empresas'" 
+                :class="{'bg-indigo-600 text-white shadow-md': tabActiva === 'empresas', 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800': tabActiva !== 'empresas'}"
+                class="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap">
+            <i class="fa-solid fa-briefcase"></i> Mis Empresas
+        </button>
+
+        <button @click="tabActiva = 'preferencias'" 
+                :class="{'bg-pink-600 text-white shadow-md': tabActiva === 'preferencias', 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800': tabActiva !== 'preferencias'}"
+                class="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap">
+            <i class="fa-solid fa-heart-circle-check"></i> Mis Preferencias
+        </button>
+        
+        <button @click="tabActiva = 'descuentos'" 
+                :class="{'bg-teal-600 text-white shadow-md': tabActiva === 'descuentos', 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800': tabActiva !== 'descuentos'}"
+                class="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap">
+            <i class="fa-solid fa-percent"></i> Mis Descuentos
+        </button>
+    </div>
+
+
+    <div x-show="tabActiva === 'general'" x-transition.opacity.duration.300ms>
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 md:p-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+            <div class="flex items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 relative z-10">
+                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl shadow-sm">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white">Información General</h3>
+                    <p class="text-xs text-slate-500">Tus datos personales y académicos.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Nombre Completo</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ request.user.first_name }} {{ request.user.last_name }}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Correo Electrónico</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{{ request.user.email }}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Teléfono</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        {% if request.user.telefono %}{{ request.user.telefono }}{% else %}<span class="text-slate-400 italic font-normal">No registrado</span>{% endif %}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 text-primary">Carrera</p>
+                    <p class="text-sm font-bold text-slate-800 dark:text-slate-200">
+                        {% if request.user.carrera %}{{ request.user.carrera.nombre }}{% else %}<span class="text-slate-400 italic font-normal">Sin carrera asignada</span>{% endif %}
+                    </p>
+                </div>
+                <div class="lg:col-span-2 flex gap-6">
+                    <div class="w-1/2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Región</p>
+                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ request.user.region|default:"--" }}</p>
+                    </div>
+                    <div class="w-1/2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Comuna</p>
+                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ request.user.comuna|default:"--" }}</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">F. Nacimiento</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ request.user.fecha_nacimiento|date:"d M Y"|default:"--" }}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Género</p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        {% if request.user.genero == 'M' %} Masculino {% elif request.user.genero == 'F' %} Femenino {% elif request.user.genero == 'O' %} Otro {% elif request.user.genero == 'N' %} Prefiero no decir {% else %} -- {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div x-show="tabActiva === 'profesional'" x-transition.opacity.duration.300ms style="display: none;">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+            <div class="space-y-6 md:space-y-8">
+                <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6" x-data="{ editing: false }">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-brands fa-linkedin text-[#0077b5] text-xl"></i> Mi LinkedIn
+                        </h3>
+                        <button type="button" @click="editing = !editing" class="text-xs font-bold text-primary hover:underline uppercase tracking-wide">
+                            <span x-text="editing ? 'Cancelar' : 'Editar URL'"></span>
+                        </button>
+                    </div>
+
+                    <div x-show="!editing" class="p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 mb-6 break-all">
+                        {% if cv and cv.linkedin_url %}
+                            <a href="{{ cv.linkedin_url }}" target="_blank" class="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2">
+                                {{ cv.linkedin_url }} <i class="fa-solid fa-external-link-alt text-xs"></i>
+                            </a>
+                        {% else %}
+                            <span class="text-sm text-slate-400 italic">No ingresado</span>
+                        {% endif %}
+                    </div>
+
+                    <div x-show="editing" style="display: none;" x-transition class="mb-6">
+                        <form method="POST" class="flex flex-col gap-3">
+                            {% csrf_token %}
+                            <label class="text-xs font-bold text-slate-500 uppercase">Nueva URL de LinkedIn</label>
+                            <input type="text" name="linkedin_url" class="w-full px-4 py-2 rounded-xl bg-white dark:bg-darkBg border border-gray-300 dark:border-gray-600 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none" placeholder="Ej: www.linkedin.com/in/tu-perfil" required x-data @blur="if($el.value.trim() !== '' && !$el.value.startsWith('http')) { $el.value = 'https://' + $el.value }">
+                            <button type="submit" class="w-full py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wider transition shadow-md">Guardar URL</button>
+                        </form>
+                    </div>
+
+                    <hr class="border-gray-100 dark:border-gray-700 mb-6">
+
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Código QR</h4>
+                        <div class="flex flex-col sm:flex-row gap-6">
+                            <div class="flex-shrink-0 flex justify-center">
+                                <div class="bg-white p-2 rounded-lg border border-gray-200 shadow-sm w-32 h-32 flex items-center justify-center">
+                                    {% if cv and qr_base64 %}
+                                        <img src="data:image/png;base64,{{ qr_base64 }}" alt="QR LinkedIn" class="w-full h-full object-contain">
+                                    {% else %}
+                                        <div class="text-center"><i class="fa-solid fa-qrcode text-3xl text-slate-300 mb-1"></i><p class="text-[10px] text-slate-400">Sin QR</p></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex-grow space-y-4">
+                                <form method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" name="action" value="save_qr" class="w-full py-2 px-4 rounded-lg bg-slate-800 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:opacity-90 transition shadow-sm flex items-center justify-center gap-2"><i class="fa-solid fa-wand-magic-sparkles"></i> Generar QR desde URL</button>
+                                </form>
+                                <div class="relative flex py-1 items-center">
+                                    <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                                    <span class="flex-shrink-0 mx-2 text-[10px] text-slate-400 uppercase font-bold">O subir imagen</span>
+                                    <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                                </div>
+                                <form method="POST" enctype="multipart/form-data" class="flex flex-col gap-2">
+                                    {% csrf_token %}
+                                    <input type="file" name="linkedin_qr" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"/>
+                                    <button type="submit" class="w-full py-2 rounded-lg border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition">Actualizar QR Manualmente</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6" x-data="{ fileName: '', editKeywords: false, loading: false }">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-file-pdf text-red-500 text-xl"></i> Mi Currículum
+                        </h3>
+                        <a href="{% url 'subir_cv' %}" class="text-xs font-bold text-primary hover:underline">Ver detalle CV</a>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-primary transition group bg-slate-50 dark:bg-transparent mb-4">
+                            <input type="file" name="archivo" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" @change="fileName = $event.target.files[0].name">
+                            <div x-show="!fileName">
+                                <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 group-hover:text-primary mb-2 transition"></i>
+                                <p class="text-xs text-slate-500 font-bold uppercase">Click para actualizar archivo</p>
+                            </div>
+                            <div x-show="fileName" style="display: none;">
+                                <i class="fa-solid fa-check-circle text-2xl text-green-500 mb-2"></i>
+                                <p class="text-xs text-slate-800 dark:text-white font-bold break-all" x-text="fileName"></p>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 rounded-lg bg-primary hover:bg-primaryHover text-white font-bold text-xs uppercase tracking-wider transition shadow-md">Subir Nuevo Archivo</button>
+                    </form>
+
+                    {% if cv %}
+                        <div class="mt-4 text-center pb-4 border-b border-gray-100 dark:border-gray-700">
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Archivo actual</p>
+                            <p class="text-sm font-medium text-slate-700 dark:text-slate-300 break-all">{{ cv.nombre_archivo }}</p>
+                        </div>
+                    {% endif %}
+
+                    {% if palabras %}
+                    <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <div class="mb-4">
+                            <button type="button" @click="editKeywords = !editKeywords" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-600">
+                                <i class="fa-solid fa-pen-to-square"></i> 
+                                <span x-text="editKeywords ? 'Cancelar Edición' : 'Editar Etiquetas'"></span>
+                            </button>
+                        </div>
+                        <form action="{% url 'guardar_keywords_cv' %}" method="POST" x-show="editKeywords" x-transition class="mb-4 flex flex-col gap-3" @submit="loading = true">
+                            {% csrf_token %}
+                            <label class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1 block">Editar Palabras Clave (Separar por comas)</label>
+                            <input type="text" name="palabras_cv" value="{{ palabras|join:', ' }}" class="w-full px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-darkBg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400">
+                            <div class="flex justify-end">
+                                <button type="submit" :disabled="loading" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-70">
+                                    <template x-if="!loading"><span>Guardar Cambios</span></template>
+                                    <template x-if="loading"><span class="flex items-center gap-2"><svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</span></template>
+                                </button>
+                            </div>
+                        </form>
+                        <div x-show="!editKeywords">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Palabras Clave Actuales</p>
+                            <div class="flex flex-wrap gap-2">
+                                {% for palabra in palabras %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800">{{ forloop.counter }}. {{ palabra }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="space-y-6 md:space-y-8">
+                <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col relative overflow-hidden" x-data="{ loading: false, editKeywords: false }">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 pointer-events-none"></div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 relative z-10 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-hand-holding-heart text-sm"></i></span> Ofrezco
+                    </h3>
+                    <form method="POST" action="{% url 'guardar_oferta' %}" class="flex flex-col relative z-10" @submit="loading = true">
+                        {% csrf_token %}
+                        <textarea id="textarea_ofrezco" name="texto_oferta" rows="5" class="w-full p-4 rounded-xl bg-slate-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-600 text-slate-800 dark:text-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none transition mb-4" placeholder="Describe qué puedes ofrecer (Ej: Asesoría en IA, Diseño Web)...">{% if ultima_oferta %}{{ ultima_oferta.texto_oferta }}{% endif %}</textarea>
+                        
+                        <div x-show="editKeywords" x-transition class="mb-4">
+                            <label class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1 block">Editar Palabras Clave</label>
+                            <input type="text" name="palabras_manuales" value="{% if palabras_oferta %}{{ palabras_oferta|join:', ' }}{% endif %}" class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-darkBg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <button type="button" @click="editKeywords = !editKeywords" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-600">
+                                <i class="fa-solid fa-pen-to-square"></i> <span x-text="editKeywords ? 'Cancelar Edición' : 'Editar Etiquetas'"></span>
+                            </button>
+                            <button type="submit" :disabled="loading" class="px-6 py-2 rounded-lg text-white font-bold text-xs uppercase tracking-wider shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-70" :class="editKeywords ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'">
+                                <template x-if="!loading"><span x-text="editKeywords ? 'Guardar Cambios' : 'Guardar Oferta'"></span></template>
+                                <template x-if="loading"><span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</span></template>
+                            </button>
+                        </div>
+                    </form>
+                    {% if palabras_oferta %}
+                    <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700 relative z-10" x-show="!editKeywords">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Palabras Clave Actuales</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for palabra in palabras_oferta %}
+                                <span class="px-2 py-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">{{ palabra }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col relative overflow-hidden" x-data="{ loading: false, editKeywords: false }">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4 pointer-events-none"></div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 relative z-10 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400"><i class="fa-solid fa-hand-sparkles text-sm"></i></span> Necesito
+                    </h3>
+                    <form method="POST" action="{% url 'guardar_necesidad' %}" class="flex flex-col relative z-10" @submit="loading = true">
+                        {% csrf_token %}
+                        <textarea id="textarea_necesito" name="texto_necesita" rows="5" class="w-full p-4 rounded-xl bg-slate-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-600 text-slate-800 dark:text-slate-200 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none resize-none transition mb-4" placeholder="Describe qué estás buscando (Ej: Prácticas, Mentoría, Colaboración)...">{% if ultima_necesidad %}{{ ultima_necesidad.texto_necesita }}{% endif %}</textarea>
+                        
+                        <div x-show="editKeywords" x-transition class="mb-4">
+                            <label class="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1 block">Editar Palabras Clave</label>
+                            <input type="text" name="palabras_manuales" value="{% if palabras_necesidad %}{{ palabras_necesidad|join:', ' }}{% endif %}" class="w-full px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-darkBg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <button type="button" @click="editKeywords = !editKeywords" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 text-xs font-bold transition flex items-center gap-2 border border-slate-200 dark:border-slate-600">
+                                <i class="fa-solid fa-pen-to-square"></i> <span x-text="editKeywords ? 'Cancelar Edición' : 'Editar Etiquetas'"></span>
+                            </button>
+                            <button type="submit" :disabled="loading" class="px-6 py-2 rounded-lg text-white font-bold text-xs uppercase tracking-wider shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-70" :class="editKeywords ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'">
+                                <template x-if="!loading"><span x-text="editKeywords ? 'Guardar Cambios' : 'Guardar Necesidad'"></span></template>
+                                <template x-if="loading"><span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</span></template>
+                            </button>
+                        </div>
+                    </form>
+                    {% if palabras_necesidad %}
+                    <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700 relative z-10" x-show="!editKeywords">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Palabras Clave Actuales</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for palabra in palabras_necesidad %}
+                                <span class="px-2 py-1 rounded text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 border border-amber-100 dark:border-amber-800">{{ palabra }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div x-show="tabActiva === 'empresas'" x-transition.opacity.duration.300ms style="display: none;">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 md:p-8 relative overflow-hidden" x-data="{ showFormEmpresa: false }">
+            
+            <div class="absolute top-0 left-0 w-32 h-32 bg-indigo-500/5 rounded-br-full -ml-8 -mt-8 pointer-events-none"></div>
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 relative z-10">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xl shadow-sm">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Mis Empresas y Trabajos</h3>
+                        <p class="text-xs text-slate-500">Agrega tus emprendimientos o el lugar donde trabajas para networking.</p>
+                    </div>
+                </div>
+                <button @click="showFormEmpresa = !showFormEmpresa" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-md shadow-indigo-500/20 transition transform hover:-translate-y-0.5 flex items-center gap-2">
+                    <i class="fa-solid" :class="showFormEmpresa ? 'fa-xmark' : 'fa-plus'"></i>
+                    <span x-text="showFormEmpresa ? 'Cancelar' : 'Añadir Nuevo'"></span>
+                </button>
+            </div>
+
+            <div x-show="showFormEmpresa" x-transition class="mb-8 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <h4 class="text-sm font-bold text-slate-800 dark:text-white mb-4 uppercase tracking-wide">Registrar Nueva Empresa / Trabajo</h4>
+                
+                <form action="{% url 'guardar_empresa_trabajo' %}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo de Relación *</label>
+                        <select name="tipo" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="Socio">Socio / Dueño (Emprendimiento)</option>
+                            <option value="Trabajo">Empleado / Colaborador</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombre de la Empresa *</label>
+                        <input type="text" name="nombre_empresa" required placeholder="Ej: Tech Solutions SpA" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Sitio Web o URL</label>
+                        <input type="url" name="url" placeholder="https://www.empresa.com" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo de Contacto</label>
+                        <input type="email" name="email" placeholder="contacto@empresa.com" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono</label>
+                        <input type="text" name="telefono" placeholder="+56 9 1234 5678" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">WhatsApp</label>
+                        <input type="text" name="whatsapp" placeholder="+56 9 1234 5678" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Descripción Breve *</label>
+                        <textarea name="descripcion_breve" required rows="3" placeholder="¿A qué se dedica la empresa y qué haces tú ahí?" class="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+                    </div>
+
+                    <div class="md:col-span-2 flex justify-end">
+                        <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition flex items-center gap-2">
+                            <i class="fa-solid fa-save"></i> Guardar Registro
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                
+                {% for trabajo in trabajos_empresas %}
+                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm hover:shadow-md transition group flex flex-col h-full">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 text-[10px] font-bold uppercase rounded-md mb-2">
+                                {{ trabajo.tipo }}
+                            </span>
+                            <h4 class="text-lg font-bold text-slate-900 dark:text-white">{{ trabajo.nombre_empresa }}</h4>
+                            
+                            {% if trabajo.categoria_ia %}
+                            <span class="text-xs font-bold text-purple-500 dark:text-purple-400 mt-1 block">
+                                <i class="fa-solid fa-robot text-[10px]"></i> {{ trabajo.categoria_ia }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <form action="{% url 'eliminar_empresa_trabajo' trabajo.id %}" method="POST" class="opacity-0 group-hover:opacity-100 transition-opacity">
+                            {% csrf_token %}
+                            <button type="submit" onclick="return confirm('¿Eliminar este registro?');" class="text-red-500 hover:text-red-700 p-1">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 flex-grow line-clamp-3" title="{{ trabajo.descripcion_breve }}">
+                        {{ trabajo.descripcion_breve }}
+                    </p>
+                    
+                    <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700 pt-3">
+                        {% if trabajo.email %}
+                            <div class="flex items-center gap-2 truncate" title="{{ trabajo.email }}">
+                                <i class="fa-solid fa-envelope text-slate-400"></i> <span class="truncate">{{ trabajo.email }}</span>
+                            </div>
+                        {% endif %}
+                        {% if trabajo.telefono %}
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-phone text-slate-400"></i> {{ trabajo.telefono }}
+                            </div>
+                        {% endif %}
+                        {% if trabajo.whatsapp %}
+                            <div class="flex items-center gap-2 text-green-600 dark:text-green-500">
+                                <i class="fa-brands fa-whatsapp"></i> {{ trabajo.whatsapp }}
+                            </div>
+                        {% endif %}
+                        {% if trabajo.url %}
+                            <div class="flex items-center gap-2 truncate col-span-2">
+                                <i class="fa-solid fa-link text-blue-500"></i> 
+                                <a href="{{ trabajo.url }}" target="_blank" class="text-blue-500 hover:underline truncate">{{ trabajo.url }}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                    <div class="col-span-1 md:col-span-2 text-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                        <i class="fa-solid fa-briefcase text-4xl text-slate-300 dark:text-slate-600 mb-3"></i>
+                        <p class="text-slate-500 dark:text-slate-400 font-medium">Aún no has agregado ninguna empresa o trabajo.</p>
+                        <p class="text-xs text-slate-400 mt-1">Comparte a qué te dedicas para potenciar tu networking.</p>
+                    </div>
+                {% endfor %}
+                
+            </div>
+        </div>
+    </div>
+
+
+    <div x-show="tabActiva === 'preferencias'" x-transition.opacity.duration.300ms style="display: none;">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 md:p-8 relative overflow-hidden">
+            
+            <div class="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 relative z-10">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 text-xl shadow-sm">
+                        <i class="fa-solid fa-heart-circle-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Mis Preferencias</h3>
+                        <p class="text-xs text-slate-500">Selecciona los temas de tu interés para recibir promociones y eventos personalizados.</p>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{% url 'guardar_preferencias_usuario' %}" method="POST" class="relative z-10">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    {% for pref in todas_las_preferencias %}
+                    
+                    <label class="cursor-pointer relative flex flex-col bg-slate-50 dark:bg-slate-800/50 border-2 rounded-xl p-5 hover:border-pink-400 transition-colors group"
+                            :class="{'border-pink-500 bg-pink-50/50 dark:bg-pink-900/10': isChecked}" 
+                            x-data="{ isChecked: {% if pref.id in mis_preferencias_ids %}true{% else %}false{% endif %} }">
+                        
+                        <input type="checkbox" name="preferencias_seleccionadas" value="{{ pref.id }}" class="peer absolute opacity-0 w-0 h-0" x-model="isChecked">
+                        
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow flex items-center justify-center text-pink-500 text-lg group-hover:scale-110 transition-transform">
+                                <i class="fa-solid {{ pref.icono|default:'fa-tag' }}"></i>
+                            </div>
+                            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+                                 :class="isChecked ? 'bg-pink-500 border-pink-500' : 'border-slate-300 dark:border-slate-600'">
+                                <i class="fa-solid fa-check text-white text-[10px]" x-show="isChecked" style="display: none;"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm font-bold text-slate-800 dark:text-white mb-1">{{ pref.nombre }}</p>
+                        <p class="text-[10px] text-slate-500 leading-tight">{{ pref.pregunta }}</p>
+                    </label>
+
+                    {% empty %}
+                    <div class="col-span-1 md:col-span-3 text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                        <p class="text-slate-500 text-sm">Aún no hay preferencias disponibles configuradas por el administrador.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button type="submit" class="px-6 py-2.5 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-lg shadow-md transition flex items-center gap-2">
+                        <i class="fa-solid fa-save"></i> Guardar Preferencias
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <div x-show="tabActiva === 'descuentos'" x-transition.opacity.duration.300ms style="display: none;">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 md:p-8 relative overflow-hidden">
+            
+            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 relative z-10">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400 text-xl shadow-sm">
+                        <i class="fa-solid fa-piggy-bank"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Mis Bancos / Descuentos</h3>
+                        <p class="text-xs text-slate-500">Selecciona tu banco para recibir notificaciones de promociones diarias.</p>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{% url 'guardar_bancos_usuario' %}" method="POST" class="relative z-10">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    {% for banco in todos_los_bancos %}
+                    
+                    <label class="cursor-pointer relative flex flex-col bg-slate-50 dark:bg-slate-800/50 border-2 rounded-xl p-5 hover:border-teal-400 transition-colors group"
+                            :class="{'border-teal-500 bg-teal-50/50 dark:bg-teal-900/10': isChecked}" 
+                            x-data="{ isChecked: {% if banco.id in mis_bancos_ids %}true{% else %}false{% endif %} }">
+                        
+                        <input type="checkbox" name="bancos_seleccionados" value="{{ banco.id }}" class="peer absolute opacity-0 w-0 h-0" x-model="isChecked">
+                        
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow flex items-center justify-center text-teal-500 text-lg group-hover:scale-110 transition-transform">
+                                <i class="fa-solid {{ banco.icono|default:'fa-building-columns' }}"></i>
+                            </div>
+                            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+                                 :class="isChecked ? 'bg-teal-500 border-teal-500' : 'border-slate-300 dark:border-slate-600'">
+                                <i class="fa-solid fa-check text-white text-[10px]" x-show="isChecked" style="display: none;"></i>
+                            </div>
+                        </div>
+                        <p class="text-base font-bold text-slate-800 dark:text-white mt-2">{{ banco.nombre }}</p>
+                    </label>
+
+                    {% empty %}
+                    <div class="col-span-1 md:col-span-3 text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                        <p class="text-slate-500 text-sm">Aún no hay bancos configurados por el administrador.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button type="submit" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-md transition flex items-center gap-2">
+                        <i class="fa-solid fa-save"></i> Guardar Banco/s
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,259 @@
+from django.shortcuts import render
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import UserSerializers
+from rest_framework import status
+from django.http import Http404
+from user.models import Usuario
+# CAMBIO: Importamos el nuevo modelo de actividad
+from app.models import RegistroActividad
+import json
+import os
+from django.db.models import F 
+import google.generativeai as genai
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponse, JsonResponse
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from app.models import Evento, PreguntaEvento
+import json
+
+try:
+    genai.configure(api_key=settings.OPENAI_API_KEY) # Usamos tu variable de entorno
+except:
+    pass # Manejo de error si no hay API Key configurada
+# Create your views here.
+
+def home_api(request):
+    data = {}
+    if request.user.is_authenticated:
+        # CAMBIO: Usamos RegistroActividad
+        registros = RegistroActividad.objects.filter(usuario=request.user)
+        data = {
+            'registros': registros
+        }
+        
+    return render(request, 'home_api.html', data)
+
+
+class User_APIView(APIView):
+    def get(self, request, format=None, *args, **kwarqs):
+        usuario = Usuario.objects.filter(is_staff=False)
+        serializer = UserSerializers(usuario, many=True)
+        return Response(serializer.data)
+
+
+class Ubicacion_APIView(APIView):
+    def get(self, request, format=None, *args, **kwarqs):
+        
+        # Creo un diccionario vacio
+        datos = {}
+        
+        # Creo un conjunto de datos llamada ubicacion
+        datos['ubicacion'] = []
+
+        # --- DATOS ACTUALIZADOS A LA TERMINOLOGÍA UNIVERSITARIA ---
+        
+        ubicacion1 = {
+            "type": "Feature", 
+            "geometry": {"type": "Point", "coordinates": [289.3263383, -33.4409602]}, 
+            "properties": {
+                "UNIVERSIDAD": "Universidad Central", # Antes EMPRESA
+                "CARRERA": "Casa Central",            # Antes AREA
+                "Direccion": "Calle 1 Oficina 1", 
+                "COMUNA": "Santiago Centro"
+            }
+        }
+
+        ubicacion2 = {
+            "type": "Feature", 
+            "geometry": {"type": "Point", "coordinates": [289.1893511, -33.3549203]}, 
+            "properties": {
+                "UNIVERSIDAD": "Universidad Central", 
+                "CARRERA": "Facultad Ingeniería", 
+                "Direccion": "Calle 2 Oficina 2", 
+                "COMUNA": "Quilicura"
+            }
+        }
+
+        ubicacion3 = {
+            "type": "Feature", 
+            "geometry": {"type": "Point", "coordinates": [289.2523086, -33.5022488]}, 
+            "properties": {
+                "UNIVERSIDAD": "Universidad Central", 
+                "CARRERA": "Campus Deportivo", 
+                "Direccion": "Calle 3 Oficina 3", 
+                "COMUNA": "Cerrillos"
+            }
+        }
+
+        # Agrego los elementos
+        datos['ubicacion'].append(ubicacion1)
+        datos['ubicacion'].append(ubicacion2)
+        datos['ubicacion'].append(ubicacion3)
+
+        # Ruta segura para guardar el JSON (asegura que la carpeta exista)
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        json_path = os.path.join(base_dir, 'api', 'ubicacion', 'ubicacion_json.json')
+        
+        # Asegurarnos de que el directorio existe
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
+
+        # Escribir los datos en un json
+        with open(json_path, 'w') as f:
+            json.dump(datos, f)
+      
+        # Lectura de datos del archivo json
+        with open(json_path, 'r') as j:
+            mydata = json.load(j)
+    
+        return Response(mydata)
+    
+
+
+@csrf_exempt
+def enviar_pregunta_api(request):
+    if request.method == 'POST':
+        evento_id = request.POST.get('evento_id')
+        tipo = request.POST.get('tipo')
+        texto = request.POST.get('texto')
+
+        if evento_id and texto:
+            evento = get_object_or_404(Evento, pk=evento_id)
+            
+            # 1. Creamos el registro de la pregunta
+            PreguntaEvento.objects.create(
+                evento=evento,
+                tipo=tipo,
+                texto=texto
+            )
+            
+            # 2. ¡LA MAGIA AQUÍ! Actualizamos el contador real en la base de datos
+            if tipo == 'expositor':
+                Evento.objects.filter(pk=evento.pk).update(contador_preguntas=F('contador_preguntas') + 1)
+            elif tipo == 'publico':
+                Evento.objects.filter(pk=evento.pk).update(contador_aportes=F('contador_aportes') + 1)
+
+            # Retornamos un HTML vacío o un mensaje de éxito pequeño
+            return HttpResponse('<div class="text-emerald-500 text-xs font-bold mt-2 text-center fade-out">¡Enviado con éxito!</div>')
+    
+    return HttpResponse('Error', status=400)
+
+
+
+def obtener_top_preguntas_api(request, evento_id):
+    # 1. Obtener todas las preguntas del evento
+    preguntas_expositor = list(PreguntaEvento.objects.filter(evento_id=evento_id, tipo='expositor').values_list('texto', flat=True))
+    respuestas_publico = list(PreguntaEvento.objects.filter(evento_id=evento_id, tipo='publico').values_list('texto', flat=True))
+
+    # --- LÓGICA DE SELECCIÓN ---
+    
+    # A) Si hay pocas preguntas (menos de 5), las mostramos todas sin gastar IA
+    top_expositor = preguntas_expositor
+    top_publico = respuestas_publico
+
+    # B) Si hay MUCHAS, usamos Gemini para filtrar
+    if len(preguntas_expositor) > 5 or len(respuestas_publico) > 5:
+        try:
+            # --- SELECCIÓN DE MODELO DINÁMICA ---
+            genai.configure(api_key=settings.GOOGLE_API_KEY) # Aseguramos la conexión
+            
+            mis_modelos = []
+            try:
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        mis_modelos.append(m.name)
+            except Exception as e:
+                print(f"⚠️ Error listando modelos (usando default): {e}")
+                mis_modelos = ['models/gemini-1.5-flash', 'models/gemini-pro']
+            
+            if not mis_modelos:
+                mis_modelos = ['models/gemini-1.5-flash', 'models/gemini-pro']
+
+            # Priorizamos 'flash', si no, el primero disponible
+            modelo_final = next((m for m in mis_modelos if 'flash' in m), mis_modelos[0])
+            print(f"🚀 [Eventos] Usando modelo para top preguntas: {modelo_final}")
+            
+            # Inicializamos el modelo detectado
+            model = genai.GenerativeModel(modelo_final)
+            # ------------------------------------
+            
+            prompt = f"""
+            Actúa como un moderador de eventos experto. Tengo dos listas de textos recibidos en un evento.
+            
+            Lista A (Preguntas al expositor): {json.dumps(preguntas_expositor)}
+            Lista B (Respuestas/Aportes del público): {json.dumps(respuestas_publico)}
+
+            Tu tarea:
+            1. Analiza la profundidad, relevancia y calidad de redacción.
+            2. Selecciona las 5 MEJORES de la Lista A.
+            3. Selecciona las 5 MEJORES de la Lista B.
+            
+            Responde SOLO con un objeto JSON válido con este formato exacto, sin markdown:
+            {{
+                "top_expositor": ["texto 1", "texto 2"],
+                "top_publico": ["texto 1", "texto 2"]
+            }}
+            """
+            
+            response = model.generate_content(prompt)
+            texto_limpio = response.text.replace('```json', '').replace('```', '')
+            data = json.loads(texto_limpio)
+            
+            # Actualizamos las listas con la selección de la IA
+            if 'top_expositor' in data:
+                top_expositor = data['top_expositor']
+            if 'top_publico' in data:
+                top_publico = data['top_publico']
+
+        except Exception as e:
+            print(f"Error Gemini: {e}")
+            # Si falla la IA, mostramos las últimas 5 por defecto (fallback)
+            top_expositor = preguntas_expositor[-5:]
+            top_publico = respuestas_publico[-5:]
+
+    # Renderizamos el HTML parcial para HTMX
+    # Creamos un template string simple aquí para no crear otro archivo, 
+    # o puedes crear 'api/partials/preguntas_list.html'
+    
+    html_response = """
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-white/5 p-4 rounded-xl border border-emerald-100 dark:border-emerald-500/20">
+            <h5 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-star"></i> Top Preguntas al Expositor
+            </h5>
+            <ul class="space-y-2">
+    """
+    
+    if not top_expositor:
+        html_response += '<li class="text-xs text-slate-400 italic">Esperando preguntas...</li>'
+    
+    for p in top_expositor:
+        html_response += f'<li class="p-2 bg-slate-50 dark:bg-slate-800 rounded text-sm text-slate-700 dark:text-slate-300 border-l-2 border-emerald-500">{p}</li>'
+
+    html_response += """
+            </ul>
+        </div>
+
+        <div class="bg-white dark:bg-white/5 p-4 rounded-xl border border-blue-100 dark:border-blue-500/20">
+            <h5 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-users"></i> Top Aportes del Público
+            </h5>
+            <ul class="space-y-2">
+    """
+
+    if not top_publico:
+        html_response += '<li class="text-xs text-slate-400 italic">Esperando aportes...</li>'
+
+    for p in top_publico:
+        html_response += f'<li class="p-2 bg-slate-50 dark:bg-slate-800 rounded text-sm text-slate-700 dark:text-slate-300 border-l-2 border-blue-500">{p}</li>'
+
+    html_response += """
+            </ul>
+        </div>
+    </div>
+    """
+
+    return HttpResponse(html_response)
+
+    

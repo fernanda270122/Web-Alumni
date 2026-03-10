@@ -1,0 +1,89 @@
+{% load static %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50 dark:bg-[#020617]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completar Registro | Red Alumni</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: '#991b1b', primaryHover: '#7f1d1d' }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="h-full flex flex-col justify-center items-center py-12 sm:px-6 lg:px-8">
+
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
+        <div class="mx-auto w-20 h-20 bg-white dark:bg-[#1e293b] rounded-2xl flex items-center justify-center text-4xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 mb-6 transform transition hover:scale-105 duration-300">
+            <svg class="w-10 h-10" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z" fill="#EA4335"></path>
+                <path d="M23.49 12.275C23.49 11.49 23.415 10.73 23.3 10H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.945 21.1C22.2 19.01 23.49 15.92 23.49 12.275Z" fill="#4285F4"></path>
+                <path d="M5.26498 14.2949C5.02498 13.5699 4.88501 12.7999 4.88501 11.9999C4.88501 11.1999 5.01998 10.4299 5.26498 9.7049L1.275 6.60986C0.46 8.22986 0 10.0599 0 11.9999C0 13.9399 0.46 15.7699 1.28 17.3899L5.26498 14.2949Z" fill="#FBBC05"></path>
+                <path d="M12.0004 24.0001C15.2404 24.0001 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.26538 14.29L1.27539 17.385C3.25539 21.31 7.3104 24.0001 12.0004 24.0001Z" fill="#34A853"></path>
+            </svg>
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Casi listos...
+        </h2>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Falta un último paso para vincular tu cuenta.
+        </p>
+    </div>
+
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white dark:bg-[#1e293b] py-10 px-6 shadow-2xl shadow-slate-200/50 dark:shadow-none sm:rounded-2xl sm:px-10 border border-slate-100 dark:border-slate-700 relative overflow-hidden">
+            
+            <div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -mr-6 -mt-6 pointer-events-none"></div>
+
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-6 text-center relative z-10">
+                Por seguridad, confirma el correo electrónico para enlazarlo con tu perfil de <span class="font-bold text-primary">Red Alumni</span>.
+            </p>
+
+            <form class="space-y-6 relative z-10" method="POST" action="">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-bold mb-4">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">
+                            {% if field.name == 'email' %}Correo Electrónico{% else %}{{ field.label }}{% endif %}
+                        </label>
+                        <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" value="{{ field.value|default:'' }}" required 
+                               class="appearance-none block w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm transition-all shadow-sm">
+                        {% if field.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div>
+                    <button type="submit" class="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-primaryHover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-check"></i> Confirmar y Entrar
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <a href="{% url 'login' %}" class="text-xs font-bold text-slate-500 hover:text-primary transition">Cancelar y volver al inicio</a>
+        </div>
+    </div>
+
+</body>
+</html>

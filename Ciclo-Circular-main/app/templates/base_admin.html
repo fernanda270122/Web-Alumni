@@ -1,0 +1,274 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth" x-data="themeSwitcher()" :class="{ 'dark': isDark }">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración | Red Ex Alumnos</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', 
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#991b1b', 
+                        primaryHover: '#7f1d1d',
+                        darkBg: '#020617', 
+                        darkSurface: '#0f172a',
+                        lightBg: '#fdfbf7', 
+                        lightSurface: '#ffffff', 
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .nav-active {
+            background-color: #f3f4f6;
+            color: #991b1b;
+            font-weight: 700;
+            border-left: 4px solid #991b1b;
+        }
+        .nav-item { border-left: 4px solid transparent; }
+        .nav-item:hover { background-color: #f9fafb; }
+        
+        .dark .nav-active {
+            background-color: rgba(255,255,255,0.05);
+            color: #ffffff;
+            border-left: 4px solid #ffffff;
+        }
+        .dark .nav-item:hover { background-color: rgba(255,255,255,0.05); }
+    </style>
+</head>
+
+<body class="bg-lightBg text-slate-800 dark:bg-darkBg dark:text-slate-200 antialiased transition-colors duration-300 flex flex-col min-h-screen" hx-boost="true">
+
+    <nav class="fixed w-full z-50 top-0 border-b border-white/10 bg-[#0f172a] text-white shadow-md h-20" x-data="{ mobileMenuOpen: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+            <div class="flex items-center justify-between h-full">
+                
+                <div class="flex items-center gap-4 cursor-pointer" hx-get="{% url 'home_admin' %}" hx-target="body" hx-push-url="true">
+                    <div class="w-10 h-10 bg-primary rounded-md flex items-center justify-center text-white font-bold text-xl shadow-md">
+                        A
+                    </div>
+                    <div class="flex flex-col justify-center leading-tight">
+                        <span class="font-medium text-xs text-white block">Panel de Administración</span>
+                        <span class="font-medium text-xs text-white block">Ingeniería Industrial</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    
+                    <button @click="toggleTheme()" class="text-gray-400 hover:text-white p-2 transition rounded-full hover:bg-white/10">
+                        <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
+                    </button>
+                    
+                    <div class="hidden md:flex items-center gap-1">
+                        <a href="{% url 'admin_usuarios' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition flex items-center gap-2">
+                            <i class="fa-solid fa-users text-primary"></i> Usuarios
+                        </a>
+                        <a href="{% url 'home_procesamiento' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition flex items-center gap-2">
+                            <i class="fa-solid fa-microchip text-primary"></i> Procesamientos
+                        </a>
+                        <a href="{% url 'menu_notificaciones' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition flex items-center gap-2">
+                            <i class="fa-solid fa-bell text-primary"></i> Notificaciones
+                        </a>
+                        
+                        <div class="h-6 w-px bg-white/10 mx-2"></div>
+                        
+                        <form method="post" action="{% url 'logout' %}" class="inline-block">
+                            {% csrf_token %}
+                            <button type="submit" class="px-3 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-white/10 transition cursor-pointer" title="Salir">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="md:hidden flex items-center gap-2">
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 text-white hover:bg-white/10 rounded-lg transition">
+                            <i class="fa-solid fa-bars text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="mobileMenuOpen" style="display: none;" @click.away="mobileMenuOpen = false" 
+             class="md:hidden bg-[#0f172a] border-t border-white/10 absolute w-full left-0 z-40 shadow-2xl transition-all duration-300 max-h-[80vh] overflow-y-auto" 
+             x-transition>
+            <div class="px-4 py-4 space-y-2">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2">Accesos Principales</p>
+                <a href="{% url 'admin_usuarios' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-users w-5 text-center text-primary"></i> Usuarios</a>
+                <a href="{% url 'home_procesamiento' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-microchip w-5 text-center text-primary"></i> Procesamientos</a>
+                <a href="{% url 'menu_notificaciones' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-bell w-5 text-center text-primary"></i> Notificaciones</a>
+                
+                <div class="border-t border-white/10 my-2"></div>
+                
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2">Herramientas</p>
+                <a href="{% url 'home_admin' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-house w-5 text-center text-slate-400"></i> Inicio</a>
+                <a href="{% url 'admin_mensajeria' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-paper-plane w-5 text-center text-indigo-400"></i> Mensajería
+                </a>
+                <a href="{% url 'seleccion_empresa_calendario' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-regular fa-calendar w-5 text-center text-slate-400"></i> Calendario</a>
+                <a href="{% url 'admin_membresias' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-id-card w-5 text-center text-red-400"></i> Membresías
+                </a>
+                
+                <a href="{% url 'auto_diagnostico' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-clipboard-list w-5 text-center text-slate-400"></i> Registros</a>
+                <a href="{% url 'home_admin' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-wave-square w-5 text-center text-slate-400"></i> Frecuencias</a>
+                <a href="{% url 'home_graficos' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-chart-pie w-5 text-center text-slate-400"></i> Gráficos</a>
+                
+                <a href="/admin/" target="_blank" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-gears w-5 text-center text-slate-400"></i> Admin Django
+                </a>
+                <a href="{% url 'log_telegram' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-terminal w-5 text-center text-slate-400"></i> Logs
+                </a>
+                <a href="{% url 'Home_api' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-network-wired w-5 text-center text-slate-400"></i> APIs
+                </a>
+                <a href="{% url 'gestion-bolsa' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-briefcase w-5 text-center text-slate-400"></i> Bolsa Empleo
+                </a>
+
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full text-left block px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-white/10 flex gap-3 border-t border-white/10 mt-2 cursor-pointer">
+                        <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Cerrar Sesión
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-28 pb-12 flex-grow w-full">
+        
+        <div class="mb-1 md:mb-6" x-data="{ greeting: '' }" x-init="const h=new Date().getHours(); greeting = h<12?'Buenos días':(h<20?'Buenas tardes':'Buenas noches');">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                <span x-text="greeting"></span>, <span class="text-primary">Administrador</span>.
+            </h1>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-8 items-start">
+            
+            {% block sidebar %}
+            <div class="hidden md:block w-64 flex-shrink-0 sticky top-24">
+                <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-white/5">
+                        <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Herramientas</h3>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        
+                        <a href="{% url 'home_admin' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'home_admin' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-house w-5 text-center"></i> <span class="font-medium">Inicio</span>
+                        </a>
+                        
+                        <a href="{% url 'admin_mensajeria' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'admin_mensajeria' %}bg-indigo-50 dark:bg-indigo-900/10 text-indigo-800 dark:text-indigo-400 font-bold border-l-4 border-indigo-800 dark:border-indigo-400{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-paper-plane w-5 text-center group-hover:text-indigo-800 dark:group-hover:text-indigo-400 transition"></i> 
+                            <span class="font-medium">Mensajería</span>
+                        </a>
+
+                        <a href="{% url 'seleccion_empresa_calendario' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'seleccion_empresa_calendario' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-regular fa-calendar w-5 text-center"></i> <span class="font-medium">Calendario</span>
+                        </a>
+                        
+                        <a href="{% url 'admin_membresias' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'admin_membresias' %}bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 font-bold border-l-4 border-red-800 dark:border-red-400{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-id-card w-5 text-center group-hover:text-red-800 dark:group-hover:text-red-400 transition"></i> 
+                            <span class="font-medium">Membresías</span>
+                        </a>
+
+                        <a href="{% url 'auto_diagnostico' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'auto_diagnostico' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-clipboard-list w-5 text-center"></i> <span class="font-medium">Registros</span>
+                        </a>
+
+                        <a href="{% url 'home_admin' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'home_admin_frecuencias' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-wave-square w-5 text-center"></i> <span class="font-medium">Frecuencias</span>
+                        </a>
+
+                        <a href="{% url 'home_graficos' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'home_graficos' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span class="font-medium">Gráficos</span>
+                        </a>
+
+                        <div class="my-2 border-t border-gray-100 dark:border-gray-700 mx-4"></div>
+
+                        <a href="/admin/" target="_blank" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5">
+                            <i class="fa-solid fa-gears w-5 text-center"></i> <span class="font-medium">Admin Django</span>
+                        </a>
+
+                        <a href="{% url 'log_telegram' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'log_telegram' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-terminal w-5 text-center"></i> <span class="font-medium">Logs</span>
+                        </a>
+
+                        <a href="{% url 'Home_api' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'Home_api' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-network-wired w-5 text-center"></i> <span class="font-medium">APIs</span>
+                        </a>
+                        
+                        <a href="{% url 'gestion-bolsa' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'gestion-bolsa' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-briefcase w-5 text-center"></i> <span class="font-medium">Bolsa Empleo</span>
+                        </a>
+
+                        <form method="post" action="{% url 'logout' %}" class="mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item text-red-400 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer">
+                                <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> 
+                                <span class="font-medium">Cerrar Sesión</span>
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
+
+            <div class="flex-1 w-full min-w-0">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-[#0f172a] text-white border-t border-white/10 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+            <p>&copy; 2026 Red Ex Alumnos DII. Panel de Administración.</p>
+            <div class="flex gap-4">
+                <span>Versión 2.0</span>
+                <a href="#" class="hover:text-white">Soporte Técnico</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function themeSwitcher() {
+            return {
+                isDark: localStorage.getItem('theme') === 'dark',
+                toggleTheme() {
+                    this.isDark = !this.isDark;
+                    localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
+                    this.applyTheme();
+                },
+                applyTheme() {
+                    if (this.isDark) document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                },
+                init() { this.applyTheme(); }
+            }
+        }
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            window.scrollTo(0, 0);
+        });
+    </script>
+</body>
+</html>

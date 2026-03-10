@@ -1,0 +1,27 @@
+{% extends 'base_public.html' %}
+{% load static %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[60vh] px-4">
+    <div class="bg-white dark:bg-[#1e293b] p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full text-center transform transition-all">
+        
+        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 dark:bg-red-900/30 mb-6">
+            <i class="fa-solid fa-circle-xmark text-5xl text-red-600 dark:text-red-400"></i>
+        </div>
+        
+        <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Pago Rechazado</h2>
+        <p class="text-slate-600 dark:text-slate-400 mb-8 text-sm leading-relaxed">
+            Lo sentimos, hubo un problema al procesar tu pago con Mercado Pago. Tu tarjeta pudo haber sido rechazada o hubo un error de conexión.
+        </p>
+        
+        <div class="flex flex-col gap-3">
+            <a href="{% url 'ver_calendario' %}" class="w-full inline-flex justify-center items-center px-6 py-3 rounded-xl bg-[#009EE3] hover:bg-[#0086C4] text-white text-sm font-bold shadow-lg shadow-[#009EE3]/30 transition-all transform hover:-translate-y-0.5">
+                <i class="fa-solid fa-rotate-right mr-2"></i> Intentar Nuevamente
+            </a>
+            <a href="{% url 'home' %}" class="w-full inline-flex justify-center items-center px-6 py-3 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 text-sm font-bold transition-colors border border-transparent dark:border-slate-700">
+                Ir al Inicio
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

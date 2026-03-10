@@ -1,0 +1,120 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+
+    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Procesamiento Ofrezco × Necesito</h2>
+        <a href="{% url 'home_procesamiento' %}" class="text-sm font-bold text-slate-500 hover:text-primary transition">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Volver
+        </a>
+    </div>
+
+    {% if user.is_staff %}
+        
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Seleccione Universidad</h3>
+            <div class="flex flex-wrap gap-3">
+                {% for uni in Universidads %}
+                    <a href="?Universidad={{ uni.id_universidad }}" 
+                       class="px-4 py-2 rounded-full text-sm font-bold transition border 
+                       {% if Universidad_seleccionada and uni.id_universidad == Universidad_seleccionada.id_universidad %}
+                           bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/30
+                       {% else %}
+                           bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary
+                       {% endif %}">
+                        {{ uni.nombre }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if Universidad_seleccionada %}
+            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Usuarios de {{ Universidad_seleccionada.nombre }}</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-gears mr-2"></i> Procesar Matriz
+                    </button>
+                </form>
+            </div>
+
+            {% if matriz_ofrezco_necesito %}
+                <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 overflow-hidden">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Matriz de Coincidencias</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-center border-collapse">
+                            <thead class="bg-slate-800 text-white text-xs uppercase">
+                                <tr>
+                                    <th class="p-3 border border-slate-700">Usuario (OFREZCO)</th>
+                                    {% for u in usuarios %}
+                                        <th class="p-3 border border-slate-700">{{ u.first_name }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                {% for usuario, fila in matriz_ofrezco_necesito %}
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                                        <td class="p-3 bg-slate-100 dark:bg-slate-900 font-bold border border-slate-200 dark:border-slate-700 text-left">
+                                            {{ usuario.first_name }}
+                                        </td>
+                                        {% for valor in fila %}
+                                            <td class="p-3 border border-slate-200 dark:border-slate-700 
+                                                {% if valor > 0 %}bg-emerald-100 text-emerald-800 font-bold dark:bg-emerald-900/50 dark:text-emerald-300{% endif %}">
+                                                {{ valor }}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% if frecuencias_ofrezco %}
+                    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b pb-2 border-emerald-500">Frecuencia OFREZCO</h3>
+                        <div class="overflow-y-auto max-h-96">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-100 dark:bg-slate-800 font-bold">
+                                    <tr><th class="p-3">Palabra</th><th class="p-3 text-right">Freq</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    {% for palabra, freq in frecuencias_ofrezco.items %}
+                                        <tr><td class="p-3">{{ palabra }}</td><td class="p-3 text-right font-mono">{{ freq }}</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if frecuencias_necesito %}
+                    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b pb-2 border-amber-500">Frecuencia NECESITO</h3>
+                        <div class="overflow-y-auto max-h-96">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-100 dark:bg-slate-800 font-bold">
+                                    <tr><th class="p-3">Palabra</th><th class="p-3 text-right">Freq</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                    {% for palabra, freq in frecuencias_necesito.items %}
+                                        <tr><td class="p-3">{{ palabra }}</td><td class="p-3 text-right font-mono">{{ freq }}</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+        {% endif %}
+    {% else %}
+        <div class="p-4 bg-red-50 text-center rounded-lg text-red-600">Acceso Denegado</div>
+    {% endif %}
+</div>
+{% endblock %}

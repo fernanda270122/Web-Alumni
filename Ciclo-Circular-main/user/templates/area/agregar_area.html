@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+
+<div class="container" id="Area" style="margin-top: 50px;">
+    <div class="row">
+        <div class="col-12 col-md-6 offset-md-3">
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-header border-secondary text-center">
+                    <h3>Completar Perfil Académico</h3>
+                </div>
+                <div class="card-body" id="card_">
+                    <p class="text-muted text-center">Selecciona tu Universidad y Carrera</p>
+                    <hr class="border-secondary">
+                    
+                    <form action="" method="post">
+                        {% csrf_token %}
+                        
+                        {{ form | crispy }}
+
+                        <div class="d-grid gap-2 mt-4">
+                            <input type="submit" class="btn btn-primary fw-bold" id="ingresarArea" value="Guardar Perfil">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(function () {
+        // IDs definidos en forms.py
+        var $selectUni = $('#select_universidad');
+        var $selectCarrera = $('#select_carrera');
+
+        // Inicialmente, si no hay universidad seleccionada, Carrera debería estar vacía o deshabilitada
+        if (!$selectUni.val()) {
+            $selectCarrera.html('<option value="">---------</option>');
+        }
+
+        // DETECTAR CAMBIO EN UNIVERSIDAD
+        $selectUni.on('change', function () {
+            var uniId = $(this).val();
+            var csrftoken = $('input[name=csrfmiddlewaretoken]').val(); // Token del form
+            var options = '<option value="">---------</option>';
+
+            // Si el usuario selecciona la opción vacía ("---------")
+            if (uniId === '') {
+                $selectCarrera.html(options);
+                return false;
+            }
+
+            // LLAMADA AJAX
+            $.ajax({
+                type: 'POST',
+                url: window.location.pathname,
+                headers: {'X-CSRFToken': csrftoken},
+                data: {
+                    'action': 'buscar_carreras', // Coincide con views.py
+                    'universidad_id': uniId      // Coincide con views.py
+                },
+                dataType: 'json'
+            }).done(function (data) {
+                // Si la respuesta es exitosa
+                if (!data.hasOwnProperty('error')) {
+                    $selectCarrera.html(options); // Limpiamos primero
+                    $.each(data, function (key, value) {
+                        // value.id y value.nombre vienen del JsonResponse en views.py
+                        $selectCarrera.append(
+                            '<option value="' + value.id + '">' + value.nombre + '</option>'
+                        );
+                    });
+                } else {
+                    console.error("Error en datos:", data.error);
+                }
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                alert('Error de conexión: ' + textStatus);
+            });
+        });
+    });
+</script>
+
+{% endblock %}

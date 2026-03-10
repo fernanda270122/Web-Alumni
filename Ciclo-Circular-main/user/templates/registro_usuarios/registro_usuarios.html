@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>Plataforma Networking</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+    <noscript>
+        <link rel="stylesheet" href="{% static 'css/noscript.css' %}" />
+    </noscript>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body class="is-preload">
+
+    <div id="wrapper">
+        <div class="container-sm pt-5">
+            
+            {% if user.is_authenticated %}
+                <div class="d-flex justify-content-between mb-3">
+                    <a id="home_admin" class="btn btn-outline-light btn-sm" href="{% url 'home' %}">Volver al Home</a> 
+                    <a href="{% url 'logout' %}" class="btn btn-danger btn-sm" id="cerrarSesion">Cerrar sesión</a>
+                </div>
+
+                {% if registros %}
+                    <div class="container-sm text-center">
+                        <div class="row justify-content-center">
+                            
+                            {% if user.is_staff %}
+                                <div class="alert alert-info">
+                                    <h3>Hola, Administrador</h3>
+                                    <h4>{{ user.username }}</h4>
+                                </div>
+                            {% else %}
+                                <h3 class="text-white">Hola, {{ user.first_name }}!</h3>
+                                
+                                {% for i in registros %}
+                                <div class="card bg-dark text-white border-secondary mb-3" style="max-width: 500px; margin: 0 auto;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-warning">{{ i.carrera.departamento.facultad.universidad.nombre }}</h5>
+                                        <p class="card-text">
+                                            <strong>Carrera:</strong> {{ i.carrera.nombre }}<br>
+                                            <small class="text-muted">{{ i.descripcion }}</small>
+                                        </p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    {% if user.is_staff %}
+                    <h4>Carga Masiva (Solo Admin)</h4>
+                    <div class="row">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="file" name="xlsfile" class="form-control mb-2"> 
+                            <button type="submit" class="btn btn-success">Subir Excel</button>
+                        </form>
+                        <br>
+                        {% block body %}{% endblock %}
+                    </div>
+                    {% endif %}
+
+                {% else %}
+                    <div class="text-center mt-5">
+                        <h2 class="text-white">¡Bienvenido!</h2>
+                        <p class="text-white">Para continuar, por favor configura tu perfil académico.</p>
+                        <p class="text-muted">Indícanos tu Universidad y Carrera.</p>
+                        
+                        <a href="{% url 'agregar_Area' user.id %}" class="btn btn-warning btn-lg fw-bold">
+                            Configurar Perfil Académico Aquí
+                        </a>
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <div class="text-center mt-5">
+                    <h1 class="text-white">Inicia Sesión</h1>
+                    <p class="text-white">Para acceder a tu Auto Diagnóstico</p>
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Iniciar Sesión</a>
+                </div>
+            {% endif %}
+            
+            <hr>
+        </div>
+    </div>
+
+    <div id="bg"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/browser.min.js' %}"></script>
+    <script src="{% static 'js/breakpoints.min.js' %}"></script>
+    <script src="{% static 'js/util.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+</html>

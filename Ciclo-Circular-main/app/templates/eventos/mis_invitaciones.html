@@ -1,0 +1,113 @@
+{% extends 'base_public.html' %}
+{% load static %}
+
+{% block content %}
+<div class="space-y-8">
+    
+    {% if messages %}
+    <div class="fixed z-50 flex flex-col gap-2 w-[95%] left-1/2 -translate-x-1/2 top-20 md:w-full md:max-w-sm md:left-auto md:translate-x-0 md:top-24 md:right-4">
+        {% for message in messages %}
+        <div class="px-4 py-3 rounded-xl shadow-lg border flex items-center gap-3 transition-all duration-500 transform translate-y-0 opacity-100"
+             x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+             class="{% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-200{% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+            
+            {% if message.tags == 'success' %}
+                <i class="fa-solid fa-circle-check text-xl shrink-0"></i>
+            {% elif message.tags == 'warning' %}
+                <i class="fa-solid fa-triangle-exclamation text-xl shrink-0"></i>
+            {% endif %}
+            
+            <div class="text-sm font-medium flex-grow leading-tight">{{ message }}</div>
+            <button @click="show = false" class="ml-auto opacity-50 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
+        <div class="text-center md:text-left">
+            <h2 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Mis Eventos e Invitaciones
+            </h2>
+            <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">
+                Gestiona tu asistencia a los eventos de la facultad.
+            </p>
+        </div>
+
+        <a href="{% url 'home' %}" class="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary hover:border-primary dark:hover:text-white dark:hover:border-primary transition text-sm font-bold shadow-sm">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Inicio
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for inv in invitaciones %}
+        <div x-data="{ estado: '{{ inv.estado }}' }" 
+             class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden transition hover:shadow-xl group">
+            
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-white/5 flex justify-between items-center">
+                <h5 class="font-bold text-slate-800 dark:text-white truncate pr-4 text-sm" title="{{ inv.evento.titulo }}">
+                    {{ inv.evento.titulo }}
+                </h5>
+                
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border transition-colors duration-300"
+                      :class="{
+                          'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800': estado === 'CONFIRMADO' || estado === 'ENTRADA_ENVIADA',
+                          'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800': estado === 'RECHAZADO',
+                          'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800': estado !== 'CONFIRMADO' && estado !== 'ENTRADA_ENVIADA' && estado !== 'RECHAZADO'
+                      }"
+                      x-text="(estado === 'CONFIRMADO' || estado === 'ENTRADA_ENVIADA') ? 'Confirmado' : (estado === 'RECHAZADO' ? 'Rechazado' : 'Pendiente')">
+                </span>
+            </div>
+
+            <div class="p-6 flex-grow flex flex-col space-y-4">
+                <div class="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                        <i class="fa-regular fa-calendar"></i>
+                    </div>
+                    <span>{{ inv.evento.inicio|date:"d F Y, H:i" }}</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <div class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+                    <span class="truncate">{{ inv.evento.lugar|default:"Por definir" }}</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3">
+                    {{ inv.evento.descripcion|default:"Sin descripción disponible." }}
+                </p>
+                <div class="flex-grow"></div> 
+
+                <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex gap-3">
+                        
+                        <button type="button"
+                                @click="fetch('{% url 'responder_invitacion_ajax' inv.evento.pk 'confirmar' %}'); estado='CONFIRMADO'"
+                                class="flex-1 inline-flex justify-center items-center px-3 py-2 text-sm font-bold rounded-xl transition border shadow-sm"
+                                :class="(estado === 'CONFIRMADO' || estado === 'ENTRADA_ENVIADA') ? 'bg-emerald-600 border-emerald-600 text-white cursor-default' : 'bg-white dark:bg-white/5 border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'">
+                            <i class="fa-solid fa-check mr-2"></i> Asistiré
+                        </button>
+
+                        <button type="button"
+                                @click="fetch('{% url 'responder_invitacion_ajax' inv.evento.pk 'rechazar' %}'); estado='RECHAZADO'"
+                                class="flex-1 inline-flex justify-center items-center px-3 py-2 text-sm font-bold rounded-xl transition border shadow-sm"
+                                :class="estado === 'RECHAZADO' ? 'bg-red-600 border-red-600 text-white cursor-default' : 'bg-white dark:bg-white/5 border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'">
+                            <i class="fa-solid fa-xmark mr-2"></i> No iré
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-16 flex flex-col items-center justify-center text-slate-400">
+            <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                <i class="fa-regular fa-envelope-open text-4xl opacity-50"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-600 dark:text-slate-300">Sin invitaciones pendientes</h3>
+            <p class="text-sm">No tienes eventos próximos por confirmar.</p>
+            <a href="{% url 'ver_calendario' %}" class="mt-4 text-primary font-bold text-sm hover:underline">Explorar Calendario</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

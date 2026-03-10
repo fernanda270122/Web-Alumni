@@ -1,0 +1,231 @@
+{% extends base_template %}
+{% load static %}
+
+{% block sidebar %}
+    {% if base_template == 'base_admin.html' %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 pt-6 pb-12 space-y-8" x-data="{ modalNuevaPref: false }">
+
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 flex items-center justify-center text-2xl shadow-sm">
+                <i class="fa-solid fa-tags"></i>
+            </div>
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Gestión de Preferencias</h2>
+                <p class="text-sm text-slate-500">Administra los temas de interés para los usuarios.</p>
+            </div>
+        </div>
+        <a href="javascript:history.back()" class="flex items-center gap-2 px-5 py-2.5 bg-slate-800 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-bold shadow-md hover:opacity-90 transition">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    {% if universidades %}
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 ml-1">Seleccione Institución</h3>
+        <div class="flex flex-wrap gap-2">
+            {% for u in universidades %}
+                <a href="?universidad={{ u.id_universidad }}" 
+                   class="px-5 py-2 rounded-full text-sm font-bold transition-all shadow-sm
+                   {% if universidad_seleccionada == u.id_universidad %}
+                       bg-red-800 text-white border border-red-900
+                   {% else %}
+                       bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700
+                   {% endif %}
+                   ">
+                    {{ u.nombre }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if universidad_seleccionada %}
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-8 py-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-white/5 flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-list text-slate-400"></i> Listado Actual
+            </h3>
+            
+            <button @click="modalNuevaPref = true" class="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-md">
+                <i class="fa-solid fa-plus"></i> Nueva Preferencia
+            </button>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                        <th class="px-6 py-4">ID</th>
+                        <th class="px-6 py-4">Ícono</th>
+                        <th class="px-6 py-4">Nombre (Etiqueta)</th>
+                        <th class="px-6 py-4">Pregunta mostrada al usuario</th>
+                        <th class="px-6 py-4 text-center">Suscritos</th>
+                        <th class="px-6 py-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                    {% for pref in preferencias %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition group" x-data="{ editMode: false }">
+                        
+                        <td class="px-6 py-4 text-slate-500 font-mono" x-show="!editMode">#{{ pref.id }}</td>
+                        <td class="px-6 py-4" x-show="!editMode">
+                            <div class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300" title="{{ pref.icono }}">
+                                <i class="fa-solid {{ pref.icono }}"></i>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-bold text-slate-900 dark:text-white" x-show="!editMode">{{ pref.nombre }}</td>
+                        <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs" x-show="!editMode">{{ pref.pregunta }}</td>
+                        <td class="px-6 py-4 text-center" x-show="!editMode">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                {{ pref.usuarios.count }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity" x-show="!editMode">
+    <div class="flex justify-end items-center gap-3">
+        <button type="button" @click="editMode = true" class="text-slate-400 hover:text-blue-500 transition" title="Editar">
+            <i class="fa-solid fa-pen"></i>
+        </button>
+        
+        <form action="{% url 'admin_eliminar_preferencia' pref.id %}" method="POST" class="m-0 p-0">
+            {% csrf_token %}
+            <input type="hidden" name="universidad_id" value="{{ universidad_seleccionada|default:'' }}">
+            <button type="submit" onclick="return confirm('¿Seguro que deseas eliminar esta preferencia de la base de datos?');" class="text-slate-400 hover:text-red-500 transition" title="Eliminar">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </form>
+    </div>
+</td>
+
+                        <td colspan="6" class="px-6 py-3 bg-blue-50/50 dark:bg-blue-900/10" x-show="editMode" style="display: none;">
+                            <form action="{% url 'admin_editar_preferencia' pref.id %}" method="POST" class="flex items-center gap-4 w-full">
+                                {% csrf_token %}
+                                <input type="hidden" name="universidad_id" value="{{ universidad_seleccionada|default:'' }}">
+                                
+                                <div class="w-24">
+                                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Ícono</label>
+                                    <input type="text" name="icono" value="{{ pref.icono }}" class="w-full px-2 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-xs outline-none font-mono">
+                                </div>
+                                <div class="w-48">
+                                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Nombre</label>
+                                    <input type="text" name="nombre" value="{{ pref.nombre }}" required class="w-full px-2 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-xs outline-none font-bold">
+                                </div>
+                                <div class="flex-grow">
+                                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Pregunta Mostrada</label>
+                                    <input type="text" name="pregunta" value="{{ pref.pregunta }}" required class="w-full px-2 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 text-xs outline-none">
+                                </div>
+                                <div class="flex items-end gap-2 pt-4">
+                                    <button type="button" @click="editMode = false" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded transition">Cancelar</button>
+                                    <button type="submit" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded shadow transition"><i class="fa-solid fa-save"></i></button>
+                                </div>
+                            </form>
+                        </td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                            <i class="fa-solid fa-tags text-4xl opacity-20 mb-2 block"></i>
+                            <p class="text-sm">No hay preferencias registradas para esta institución.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+        <div class="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+            <i class="fa-solid fa-building-columns text-4xl text-slate-300"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Panel de Preferencias</h3>
+        <p class="text-slate-500 text-center max-w-md">Selecciona una Institución del listado superior para gestionar sus temas de interés.</p>
+    </div>
+    {% endif %}
+
+    <div x-show="modalNuevaPref" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity" @click="modalNuevaPref = false" x-transition.opacity></div>
+        
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 relative z-10">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg" x-transition>
+                
+                <form method="POST" action="{% url 'admin_guardar_preferencia' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="universidad_id" value="{{ universidad_seleccionada|default:'' }}">
+                    
+                    <div class="px-6 py-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-tag"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Nueva Preferencia</h3>
+                        </div>
+                        
+                        <div class="space-y-5">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombre Corto *</label>
+                                <input type="text" name="nombre" required placeholder="Ej: Mascotas" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-pink-500 outline-none transition">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pregunta a mostrar *</label>
+                                <input type="text" name="pregunta" required placeholder="Ej: ¿Te interesan los artículos de mascotas?" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-pink-500 outline-none transition">
+                            </div>
+                            
+                            <div x-data="{
+                                iconoSeleccionado: 'fa-tag',
+                                listaIconos: [
+                                    'fa-tag', 'fa-paw', 'fa-plane', 'fa-car', 'fa-book', 'fa-laptop',
+                                    'fa-gamepad', 'fa-music', 'fa-utensils', 'fa-dumbbell', 'fa-camera',
+                                    'fa-paintbrush', 'fa-heart', 'fa-star', 'fa-globe', 'fa-briefcase',
+                                    'fa-mug-hot', 'fa-shirt', 'fa-house', 'fa-money-bill'
+                                ]
+                            }">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Selecciona un Ícono *</label>
+                                
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-11 h-11 rounded-xl bg-pink-100 dark:bg-pink-900/40 text-pink-600 dark:text-pink-400 flex items-center justify-center text-xl border border-pink-200 dark:border-pink-800 shadow-inner transition-all">
+                                        <i class="fa-solid" :class="iconoSeleccionado"></i>
+                                    </div>
+                                    <input type="text" name="icono" x-model="iconoSeleccionado" required class="flex-grow px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-pink-500 outline-none transition font-mono">
+                                </div>
+
+                                <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Opciones Rápidas</p>
+                                    <div class="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                                        <template x-for="icono in listaIconos" :key="icono">
+                                            <button type="button"
+                                                    @click="iconoSeleccionado = icono"
+                                                    class="w-full aspect-square flex items-center justify-center rounded-lg text-base transition-all duration-200"
+                                                    :class="iconoSeleccionado === icono ? 'bg-pink-500 text-white shadow-md scale-110' : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'">
+                                                <i class="fa-solid" :class="icono"></i>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 dark:bg-white/5 px-6 py-4 flex flex-row-reverse gap-3 border-t border-slate-100 dark:border-slate-700">
+                        <button type="submit" class="inline-flex w-full justify-center rounded-lg bg-pink-600 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-pink-700 sm:w-auto transition transform hover:-translate-y-0.5">
+                            Guardar
+                        </button>
+                        <button type="button" @click="modalNuevaPref = false" class="inline-flex w-full justify-center rounded-lg bg-white dark:bg-transparent border border-slate-300 dark:border-slate-600 px-5 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 sm:w-auto transition">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

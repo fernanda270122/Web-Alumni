@@ -1,0 +1,317 @@
+{% extends 'base_public.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    :root { --fc-page-bg-color: #fff1f2; --fc-neutral-bg-color: rgba(255, 255, 255, 0.5); --fc-border-color: #fecdd3; --fc-button-bg-color: #be123c; --fc-button-border-color: #be123c; --fc-button-hover-bg-color: #9f1239; --fc-today-bg-color: rgba(255, 255, 255, 0.8); --fc-text-color: #881337; --fc-header-text-color: #ffffff; }
+    .dark { --fc-page-bg-color: #0f172a; --fc-neutral-bg-color: rgba(255,255,255,0.02); --fc-border-color: rgba(255, 255, 255, 0.1); --fc-button-bg-color: rgba(190, 18, 60, 0.8); --fc-button-border-color: rgba(190, 18, 60, 0.5); --fc-today-bg-color: rgba(190, 18, 60, 0.15); --fc-text-color: #e2e8f0; --fc-header-text-color: #e2e8f0; }
+    .fc { color: var(--fc-text-color); font-family: 'Inter', sans-serif; }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: var(--fc-border-color); }
+    .fc-col-header-cell { background-color: #be123c; padding: 10px 0; }
+    .dark .fc-col-header-cell { background-color: #1e293b; }
+    .fc-daygrid-day-number { color: var(--fc-text-color); text-decoration: none; padding: 8px; font-weight: 600; }
+    
+    .fc-event-time { display: none !important; }
+    .fc-daygrid-event { margin: 1px 5px !important; border: none !important; background: transparent !important; cursor: pointer; }
+    .fc-event-main { display: flex !important; align-items: center !important; padding: 0px 4px !important; color: var(--fc-text-color) !important; height: 20px !important; }
+    .fc-daygrid-event:hover { transform: scale(1.02); filter: brightness(1.2); z-index: 50; }
+    .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 800; color: var(--fc-text-color); text-transform: capitalize; }
+    
+    @media (max-width: 768px) {
+        .fc-toolbar-title { font-size: 1.1rem !important; }
+        .fc-button { padding: 0.25rem 0.5rem !important; font-size: 0.75rem !important; }
+    }
+</style>
+
+<div x-data="{ modalOpen: false, showQuestions: false, event: { extendedProps: {} }, badgeData: {}, myStatus: null }" 
+     @open-calendar-event.window="modalOpen = true; showQuestions = false; event = $event.detail.event; badgeData = $event.detail.badge; myStatus = $event.detail.status;"
+     @contador-actualizado.window="if(event && event.id == $event.detail.id) { event[$event.detail.prop] = $event.detail.val; }"
+     class="space-y-6 pt-6 md:pt-0">
+    
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/10">
+                <i class="fa-solid fa-calendar-days text-xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Calendario Institucional</h2>
+        </div>
+        
+        <a href="{% url 'home' %}" class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-white shadow-sm">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="w-full flex flex-col justify-center items-center gap-2">
+        <div class="inline-block px-8 py-2 rounded-full bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 shadow-sm">
+            <p class="text-lg font-bold text-rose-800 dark:text-rose-200 tracking-tight text-center">
+               INSTITUCIÓN: {{ nombre_empresa }}
+            </p>
+        </div>
+        <a href="{% url 'mis_invitaciones' %}" class="text-sm font-bold text-primary hover:text-primaryHover border-b-2 border-transparent hover:border-primary transition-all pb-0.5">
+            Ver mis Invitaciones <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+        </a>
+    </div>
+
+    <div class="rounded-2xl p-4 md:p-6 shadow-lg relative z-10 overflow-hidden border border-rose-200 dark:border-white/10 bg-rose-50 dark:bg-[#0f172a] h-[600px] transition-colors duration-300">
+        <div id="calendar_el" class="h-full"></div>
+    </div>
+
+    <div x-show="modalOpen" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity" @click="modalOpen = false"></div>
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-y-auto overflow-x-hidden max-h-[90vh] rounded-2xl bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
+                
+                <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-rose-50 dark:bg-gray-800/50 flex justify-between items-start transition-colors">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary text-white shadow-md">
+                            <i class="fa-regular fa-calendar-check text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white leading-6" x-text="event.title"></h3>
+                            <p x-show="!showQuestions" class="text-xs text-slate-500 mt-1">Detalles del evento</p>
+                            <p x-show="showQuestions" class="text-xs text-emerald-600 font-bold mt-1">Módulo de Preguntas</p>
+                        </div>
+                    </div>
+                    <button @click="modalOpen = false" class="text-gray-400 hover:text-primary transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+
+                <div x-show="!showQuestions" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                    <div class="px-6 py-6 space-y-6">
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset shadow-sm" :class="badgeData.colorClass" x-text="badgeData.text"></span>
+                            <span class="inline-flex items-center rounded-md bg-white dark:bg-gray-700/50 px-2 py-1 text-xs font-medium text-slate-600 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600/20" x-show="event.lugar"><i class="fa-solid fa-location-dot mr-1 text-primary"></i> <span x-text="event.lugar"></span></span>
+                            <span class="inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-inset ring-emerald-600/20 dark:ring-emerald-500/20" x-show="event.costo > 0" x-text="'$' + event.costo"></span>
+                        </div>
+
+                        <div x-show="event.facultad_id || event.departamento_id || event.carrera_id" class="p-4 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
+                            <h4 class="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-sitemap text-primary"></i> Origen del Evento</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="text-slate-500 dark:text-gray-400 font-medium w-24">Facultad:</span><span class="text-slate-900 dark:text-white font-semibold" x-text="event.facultad_nombre"></span></div>
+                                <template x-if="event.departamento_nombre"><div class="flex items-center gap-3 ml-1"><div class="h-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4 flex items-center gap-3 w-full"><span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span><span class="text-slate-500 dark:text-gray-400 font-medium w-20">Depto:</span><span class="text-slate-900 dark:text-white" x-text="event.departamento_nombre"></span></div></div></template>
+                                <template x-if="event.carrera_nombre"><div class="flex items-center gap-3 ml-1"><div class="h-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4 flex items-center gap-3 w-full ml-4"><span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span><span class="text-slate-500 dark:text-gray-400 font-medium w-16">Carrera:</span><span class="text-slate-900 dark:text-white" x-text="event.carrera_nombre"></span></div></div></template>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-white dark:bg-white/5 p-3 rounded-lg border border-gray-100 dark:border-white/5"><strong class="text-slate-400 dark:text-gray-500 block text-[10px] uppercase tracking-wide mb-1">Inicio</strong><div class="flex items-center gap-2 text-slate-800 dark:text-white font-medium"><i class="fa-regular fa-clock text-primary"></i><span x-text="event.startStr"></span></div></div>
+                            <div class="bg-white dark:bg-white/5 p-3 rounded-lg border border-gray-100 dark:border-white/5"><strong class="text-slate-400 dark:text-gray-500 block text-[10px] uppercase tracking-wide mb-1">Término</strong><div class="flex items-center gap-2 text-slate-800 dark:text-white font-medium"><i class="fa-solid fa-flag-checkered text-primary"></i><span x-text="event.endStr"></span></div></div>
+                        </div>
+                        <div><strong class="text-slate-400 dark:text-gray-500 block text-xs uppercase tracking-wide mb-2">Detalles</strong><div class="p-4 rounded-xl bg-white dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 text-slate-700 dark:text-gray-300 leading-relaxed text-sm"><p x-text="event.description || 'No hay descripción detallada para este evento.'"></p></div></div>
+                    </div>
+                </div>
+
+                <div x-show="showQuestions" style="display: none;" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                    <div class="px-6 py-6 bg-slate-50 dark:bg-[#0f172a]">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div class="bg-white dark:bg-[#1e293b] p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                                <div class="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400 font-bold">
+                                    <i class="fa-regular fa-pen-to-square"></i><h3>Pregunta al expositor</h3>
+                                </div>
+                                <form hx-post="/api/preguntas/enviar/" hx-swap="none">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="evento_id" :value="event.id">
+                                    <input type="hidden" name="tipo" value="expositor">
+                                    <textarea name="texto" rows="4" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 resize-none transition" placeholder="Escribe tu pregunta..."></textarea>
+                                    <button type="submit" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg shadow-emerald-500/20 transition transform hover:-translate-y-0.5">Enviar</button>
+                                </form>
+                            </div>
+
+                            <div class="bg-white dark:bg-[#1e293b] p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+                                <div class="absolute top-0 right-0 p-2 opacity-5 text-emerald-600 pointer-events-none"><i class="fa-solid fa-comments text-6xl"></i></div>
+                                <div class="relative z-10">
+                                    <div class="flex items-center gap-2 mb-2 text-emerald-600 dark:text-emerald-400 font-bold">
+                                        <i class="fa-solid fa-reply"></i> <h3>Responde al expositor</h3>
+                                    </div>
+                                    <div class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-r-lg">
+                                        <p class="text-sm font-bold text-slate-700 dark:text-slate-200 italic">
+                                            "<span x-text="event.pregunta_del_coordinador || 'El expositor aun no ha hecho ninguna pregunta'"></span>"
+                                        </p>
+                                    </div>
+                                    <form hx-post="/api/preguntas/enviar/" hx-swap="none">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="evento_id" :value="event.id">
+                                        <input type="hidden" name="tipo" value="publico">
+                                        <textarea name="texto" rows="2" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none transition" placeholder="Tu respuesta..."></textarea>
+                                        <button type="submit" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg shadow-emerald-500/20 transition transform hover:-translate-y-0.5">Enviar Respuesta</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-t border-gray-100 dark:border-gray-700 transition-colors">
+                    <div class="flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-3">
+                        
+                        <div x-show="!showQuestions" class="flex gap-2 w-full md:w-auto">
+                            
+                            <button type="button" 
+                                    x-show="myStatus !== 'PAGADO'"
+                                    @click="fetch(`/responder-invitacion-ajax/${event.id}/rechazar/`); myStatus='RECHAZADO'; window.actualizarEstadoFC(event.id, 'RECHAZADO')"
+                                    class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 rounded-lg border text-sm font-bold transition btn-transition"
+                                    :class="myStatus === 'RECHAZADO' ? 'bg-red-600 border-red-600 text-white shadow-lg' : 'bg-white dark:bg-white/5 border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'">
+                                <i class="fa-solid fa-xmark mr-2"></i> No iré
+                            </button>
+
+                            <button type="button" 
+                                    x-show="event.costo == 0 && myStatus !== 'PAGADO'"
+                                    @click="fetch(`/responder-invitacion-ajax/${event.id}/confirmar/`); myStatus='CONFIRMADO'; window.actualizarEstadoFC(event.id, 'CONFIRMADO')"
+                                    class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 rounded-lg border text-sm font-bold transition shadow-sm btn-transition"
+                                    :class="(myStatus === 'CONFIRMADO' || myStatus === 'ENTRADA_ENVIADA') ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-white dark:bg-white/5 border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'">
+                                <i class="fa-solid fa-check mr-2"></i> Asistiré
+                            </button>
+
+                           <button type="button" 
+                                    @click="window.location.href = `/pagos/iniciar/${event.id || event.id_evento}/`"
+                                    x-show="event.costo > 0 && myStatus !== 'PAGADO'"
+                                    class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 rounded-lg border border-[#009EE3] bg-[#009EE3] hover:bg-[#0086C4] text-white text-sm font-bold transition shadow-lg shadow-[#009EE3]/30">
+                                <i class="fa-solid fa-credit-card mr-2"></i> Pagar Entrada (<span x-text="'$' + event.costo"></span>)
+                            </button>
+
+                            <div x-show="myStatus === 'PAGADO'"
+                                 class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 rounded-lg border border-emerald-600 bg-emerald-600 text-white text-sm font-bold shadow-lg cursor-default">
+                                <i class="fa-solid fa-check-double mr-2"></i> Entrada Pagada
+                            </div>
+
+                        </div>
+
+                        <div class="flex gap-2 w-full md:w-auto justify-end">
+                            <button type="button" 
+                                    @click="showQuestions = !showQuestions" 
+                                    class="flex-1 md:flex-none inline-flex justify-center rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm ring-1 ring-inset transition items-center gap-2"
+                                    :class="showQuestions ? 'bg-slate-200 text-slate-700 ring-slate-300 hover:bg-slate-300' : 'bg-white text-emerald-600 ring-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'">
+                                <i class="fa-solid" :class="showQuestions ? 'fa-arrow-left' : 'fa-comments'"></i>
+                                <span x-text="showQuestions ? 'Volver al Evento' : 'Preguntas'"></span>
+                            </button>
+
+                            <button type="button" @click="modalOpen = false" class="flex-1 md:flex-none inline-flex justify-center rounded-lg bg-white dark:bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-gray-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-white/10 transition">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    window.actualizarEstadoFC = function(id, status) {
+        if(window.calendarInstance) {
+            let ev = window.calendarInstance.getEventById(id);
+            if(ev) { ev.setExtendedProp('user_response', status); }
+        }
+    };
+
+    if (!window.hasCalendarHtmxListener) {
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.successful && evt.detail.requestConfig.path.includes('/api/preguntas/enviar/')) {
+                let formData = new FormData(evt.detail.elt);
+                let tipo = formData.get('tipo');
+                let evtId = formData.get('evento_id');
+                let textarea = evt.detail.elt.querySelector('textarea');
+                if(textarea) textarea.value = '';
+                
+                if(typeof window.calendarInstance !== 'undefined' && window.calendarInstance && evtId) {
+                    let ev = window.calendarInstance.getEventById(evtId);
+                    if(ev) {
+                        let propName = tipo === 'expositor' ? 'preguntas_count' : 'aportes_count';
+                        let newVal = (parseInt(ev.extendedProps[propName]) || 0) + 1;
+                        ev.setExtendedProp(propName, newVal);
+                        window.dispatchEvent(new CustomEvent('contador-actualizado', { detail: { id: evtId, prop: propName, val: newVal } }));
+                    }
+                }
+            }
+        });
+        window.hasCalendarHtmxListener = true;
+    }
+
+    (function() {
+        window.calendarInstance = null; 
+
+        function renderCalendar() {
+            const calendarEl = document.getElementById('calendar_el');
+            if (!calendarEl || typeof FullCalendar === 'undefined') return;
+
+            if (window.calendarInstance) { window.calendarInstance.destroy(); window.calendarInstance = null; }
+
+            calendarEl.innerHTML = "";
+            let idEmpresaActual = "{{ id_empresa|default:'0' }}"; 
+            var isMobile = window.innerWidth < 768;
+
+            window.calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                themeSystem: 'standard', 
+                headerToolbar: { 
+                    left: isMobile ? 'prev,next' : 'prev,next today', 
+                    center: 'title', 
+                    right: isMobile ? 'dayGridMonth,listMonth' : 'dayGridMonth,listMonth' 
+                },
+                height: '100%',
+                events: '/api/eventos/?empresa_id=' + idEmpresaActual,
+                eventContent: function(arg) {
+                    // Detección visual rápida: si cuesta plata le ponemos un icono chiquito de billete
+                    let icon = arg.event.extendedProps.costo > 0 ? '<i class="fa-solid fa-sack-dollar mr-1"></i> ' : '';
+                    return {
+                        html: `<div class="w-full flex items-center bg-primary hover:bg-primaryHover rounded shadow-sm px-2 py-1 overflow-hidden transition-colors cursor-pointer"><div class="text-[10px] md:text-xs font-semibold text-white truncate leading-tight">${icon}${arg.event.title}</div></div>`
+                    }
+                },
+                
+               eventClick: function(info) {
+                    const options = { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute:'2-digit' };
+                    const props = info.event.extendedProps;
+                    
+                    let p_coord = props.pregunta_del_coordinador;
+                    if (!p_coord || p_coord === "null" || p_coord.trim() === "") p_coord = "El expositor aun no ha hecho ninguna pregunta";
+
+                    const eventData = {
+                        id: info.event.id || props.id_evento || props.id,
+                        title: info.event.title,
+                        startStr: info.event.start.toLocaleDateString('es-ES', options),
+                        endStr: info.event.end ? info.event.end.toLocaleDateString('es-ES', options) : '',
+                        description: props.description,
+                        lugar: props.lugar,
+                        costo: parseInt(props.costo) || 0, // <-- Aseguramos que sea número para Alpine
+                        facultad_id: props.facultad_id,
+                        departamento_id: props.departamento_id,
+                        carrera_id: props.carrera_id,
+                        facultad_nombre: props.facultad_nombre,
+                        departamento_nombre: props.departamento_nombre,
+                        carrera_nombre: props.carrera_nombre,
+                        preguntas_count: parseInt(props.preguntas_count) || 0,
+                        aportes_count: parseInt(props.aportes_count) || 0,
+                        pregunta_del_coordinador: p_coord 
+                    };
+
+                    let badge = {};
+                    if (props.carrera_id) { badge = { text: 'Nivel: CARRERA', colorClass: 'bg-cyan-100 text-cyan-800 ring-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-400' }; } 
+                    else if (props.departamento_id) { badge = { text: 'Nivel: DEPARTAMENTO', colorClass: 'bg-yellow-100 text-yellow-800 ring-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-400' }; } 
+                    else if (props.facultad_id) { badge = { text: 'Nivel: FACULTAD', colorClass: 'bg-orange-100 text-orange-800 ring-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400' }; } 
+                    else { badge = { text: 'Nivel: UNIVERSIDAD', colorClass: 'bg-rose-100 text-rose-800 ring-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400' }; }
+
+                    let status = props.user_response || null;
+
+                    window.dispatchEvent(new CustomEvent('open-calendar-event', { 
+                        detail: { event: eventData, badge: badge, status: status } 
+                    }));
+                }
+            });
+
+            window.calendarInstance.render();
+            setTimeout(() => { window.calendarInstance.updateSize(); }, 50);
+        }
+
+        if (typeof htmx !== 'undefined') {
+            htmx.onLoad(function(content) {
+                if (content.querySelector && content.querySelector('#calendar_el')) {
+                    requestAnimationFrame(() => { renderCalendar(); });
+                }
+            });
+        } else {
+            document.addEventListener('DOMContentLoaded', renderCalendar);
+        }
+    })();
+</script>
+{% endblock %}

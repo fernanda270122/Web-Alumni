@@ -1,0 +1,290 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth" x-data="themeSwitcher()" :class="{ 'dark': isDark }">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Ex Alumnos | Ingeniería Industrial UChile</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', 
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#991b1b', 
+                        primaryHover: '#7f1d1d',
+                        darkBg: '#020617', 
+                        darkSurface: '#0f172a',
+                        lightBg: '#fdfbf7', 
+                        lightSurface: '#ffffff', 
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .nav-active {
+            background-color: #f3f4f6;
+            color: #991b1b;
+            font-weight: 700;
+            border-left: 4px solid #991b1b;
+        }
+        .nav-item { border-left: 4px solid transparent; }
+        .nav-item:hover { background-color: #f9fafb; }
+        
+        .dark .nav-active {
+            background-color: rgba(255,255,255,0.05);
+            color: #ffffff;
+            border-left: 4px solid #ffffff;
+        }
+        .dark .nav-item:hover { background-color: rgba(255,255,255,0.05); }
+    </style>
+</head>
+
+<body class="bg-lightBg text-slate-800 dark:bg-darkBg dark:text-slate-200 antialiased transition-colors duration-300 flex flex-col min-h-screen" hx-boost="true">
+
+    <nav class="fixed w-full z-50 top-0 border-b border-white/10 bg-[#0f172a] text-white shadow-md h-20" x-data="{ mobileMenuOpen: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+            <div class="flex items-center justify-between h-full">
+                
+                <div class="flex items-center gap-4 cursor-pointer" hx-get="{% url 'home' %}" hx-target="body" hx-push-url="true">
+                    <div class="w-10 h-10 bg-primary rounded-md flex items-center justify-center text-white font-bold text-xl shadow-md">
+                        U
+                    </div>
+                    <div class="flex flex-col justify-center leading-tight">
+                        <span class="font-medium text-xs text-white block">Red de Ex Alumnos</span>
+                        <span class="font-medium text-xs text-white block">Ingeniería Industrial</span>
+                        <span class="font-medium text-xs text-white block">Universidad de Chile</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button @click="toggleTheme()" class="text-gray-400 hover:text-white p-2 transition rounded-full hover:bg-white/10">
+                        <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
+                    </button>
+                    
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center gap-3">
+                            <div x-data="{ dropdown: false }" class="relative hidden md:block">
+                                <button @click="dropdown = !dropdown" @click.away="dropdown = false" class="flex items-center gap-2 focus:outline-none hover:bg-white/10 pl-1 pr-2 py-1 rounded-full transition">
+                                    <div class="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-white border-2 border-[#0f172a] shadow-sm">
+                                        {{ user.username|slice:":2"|upper }}
+                                    </div>
+                                    <i class="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+                                </button>
+                                
+                                <div x-show="dropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl py-2 z-50 text-slate-700 dark:text-slate-300 overflow-hidden" style="display: none;" x-transition.opacity.duration.200ms>
+                                    <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 mb-1">
+                                        <p class="text-xs font-bold text-primary">{{ user.username }}</p>
+                                    </div>
+                                    <a href="{% url 'mi_perfil' %}" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition"><i class="fa-solid fa-user mr-2 text-gray-400"></i> Mi Perfil</a>
+                                    
+                                    {% if user.es_coordinador %}
+                                    <a href="{% url 'panel_coordinador' %}" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition text-amber-600 dark:text-amber-500"><i class="fa-solid fa-user-gear mr-2"></i> Coordinación</a>
+                                    {% endif %}
+
+                                    <form method="post" action="{% url 'logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full text-left block px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-white/5 transition">
+                                            <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar Sesión
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="md:hidden flex items-center gap-2">
+                                <div class="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-white border border-white/20">
+                                    {{ user.username|slice:":2"|upper }}
+                                </div>
+                                <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 text-white hover:bg-white/10 rounded-lg transition">
+                                    <i class="fa-solid fa-bars text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-white text-sm font-medium hover:underline">Ingresar</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div x-show="mobileMenuOpen" style="display: none;" @click.away="mobileMenuOpen = false" class="md:hidden bg-[#0f172a] border-t border-white/10 absolute w-full left-0 z-40 shadow-2xl transition-all duration-300" x-transition>
+            <div class="px-4 py-4 space-y-2">
+                <a href="{% url 'home' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-house w-5 text-center text-primary"></i> Inicio</a>
+                
+                {% if user.es_coordinador %}
+                <a href="{% url 'panel_coordinador' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3 border border-amber-500/30 bg-amber-500/10">
+                    <i class="fa-solid fa-user-gear w-5 text-center text-amber-500"></i> Rol Coordinador
+                </a>
+                {% endif %}
+
+                <a href="{% url 'mi_perfil' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-address-card w-5 text-center text-primary"></i> Mis Datos</a>
+                
+                <a href="{% url 'mi_membresia' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-crown w-5 text-center text-amber-500"></i> Mi Membresía
+                </a>
+                
+                <a href="#" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-microphone-lines w-5 text-center text-primary"></i> Mi Pitch</a>
+                <a href="{% url 'ver_calendario' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-regular fa-calendar w-5 text-center text-primary"></i> Mi Calendario</a>
+                
+                <div class="border-t border-white/10 my-2 pt-2">
+                    <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2">Bolsa de Trabajo</p>
+                    <a href="{% url 'mis_ofertas' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-bullhorn w-5 text-center text-emerald-500"></i> Mis Ofertas Laborales</a>
+                    <a href="{% url 'mis_oportunidades' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-wand-magic-sparkles w-5 text-center text-purple-500"></i> Mis Oportunidades Laborales</a>
+                </div>
+
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full text-left block px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-white/10 flex gap-3 border-t border-white/10 mt-2">
+                        <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Cerrar Sesión
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-28 pb-12 flex-grow w-full">
+        
+        <div class="mb-4 md:mb-6">
+            <div x-data="{ greeting: '' }" x-init="const h=new Date().getHours(); greeting = h<12?'Buenos días':(h<20?'Buenas tardes':'Buenas noches');" class="mb-2">
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+                    <span>
+                        <span x-text="greeting"></span>{% if user.is_authenticated %},{% endif %}
+                    </span>
+                    {% if user.is_authenticated %}
+                        <span class="text-primary">
+                            {% if user.first_name %}
+                                {{ user.first_name|title }} {{ user.last_name|title }}
+                            {% else %}
+                                {{ user.username|title }}
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </h1>
+            </div>
+            
+            {% if user.is_authenticated and user.carrera %}
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/10 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 mt-1">
+                <i class="fa-solid fa-building text-primary"></i>
+                <span class="font-bold">{{ user.carrera.departamento.facultad.universidad.nombre }}</span>
+                <span class="opacity-50">|</span>
+                <span>{{ user.carrera.nombre }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex flex-col md:flex-row gap-8 items-start">
+            
+            <div class="hidden md:block w-64 flex-shrink-0 sticky top-24">
+                <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-white/5">
+                        <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Navegación</h3>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        <a href="{% url 'home' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'home' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-house w-5 text-center"></i> <span class="font-medium">Inicio</span>
+                        </a>
+
+                        {% if user.es_coordinador %}
+                        <a href="{% url 'panel_coordinador' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'panel_coordinador' %}bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-500 font-bold border-l-4 border-amber-500{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-user-gear w-5 text-center text-amber-500"></i> <span class="font-medium">Rol Coordinador</span>
+                        </a>
+                        {% endif %}
+
+                        <a href="{% url 'mi_perfil' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'mi_perfil' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-address-card w-5 text-center"></i> <span class="font-medium">Mis Datos</span>
+                        </a>
+
+                        <a href="{% url 'mi_membresia' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'mi_membresia' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-crown w-5 text-center text-amber-500"></i> 
+                            <span class="font-medium">Mi Membresía</span>
+                        </a>
+                        
+                        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5">
+                            <i class="fa-solid fa-microphone-lines w-5 text-center"></i> <span class="font-medium">Mi Pitch</span>
+                        </a>
+                        <a href="{% url 'ver_calendario' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'ver_calendario' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-regular fa-calendar w-5 text-center"></i> <span class="font-medium">Mi Calendario</span>
+                        </a>
+
+                        <div class="pt-4 pb-1 px-4">
+                            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Bolsa de Trabajo</p>
+                        </div>
+
+                        <a href="{% url 'mis_ofertas' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'mis_ofertas' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-bullhorn w-5 text-center group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition"></i> <span class="font-medium">Mis Ofertas Laborales</span>
+                        </a>
+                        <a href="{% url 'mis_oportunidades' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'mis_oportunidades' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-wand-magic-sparkles w-5 text-center group-hover:text-purple-600 dark:group-hover:text-purple-400 transition"></i> <span class="font-medium">Mis Oportunidades Laborales</span>
+                        </a>
+
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item text-red-400 hover:bg-slate-50 dark:hover:bg-white/5 border-t border-gray-100 dark:border-gray-700 mt-2">
+                                <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> <span class="font-medium">Cerrar Sesión</span>
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 w-full min-w-0">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-[#0f172a] text-white border-t border-white/10 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-primary rounded-md flex items-center justify-center text-white font-bold text-xl shadow-md">U</div>
+                        <div class="flex flex-col justify-center leading-tight">
+                            <span class="font-bold text-sm block">Red de Ex Alumnos</span>
+                            <span class="font-medium text-xs text-slate-400 block">Ingeniería Industrial</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-xs leading-relaxed max-w-xs">Conectando a los profesionales de la Universidad de Chile.</p>
+                </div>
+            </div>
+            <div class="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+                <p>&copy; 2026 Red Ex Alumnos DII. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function themeSwitcher() {
+            return {
+                isDark: localStorage.getItem('theme') === 'dark',
+                toggleTheme() {
+                    this.isDark = !this.isDark;
+                    localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
+                    this.applyTheme();
+                },
+                applyTheme() {
+                    if (this.isDark) document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                },
+                init() { this.applyTheme(); }
+            }
+        }
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            window.scrollTo(0, 0);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+from django.urls import include, path
+from .views import *
+from .views import enviar_pregunta_api, obtener_top_preguntas_api 
+
+
+urlpatterns = [
+    path('api_authorization/', include('rest_framework.urls')),
+    path('home_api', home_api, name="Home_api"),
+    path('view_usuarios/', User_APIView.as_view(), name="api_usuarios"),
+    path('view_ubicacion/', Ubicacion_APIView.as_view(), name="api_ubicacion"),
+    path('preguntas/enviar/', enviar_pregunta_api, name='enviar_pregunta_api'),
+    path('preguntas/top/<int:evento_id>/', obtener_top_preguntas_api, name='obtener_top_preguntas_api'),
+
+]

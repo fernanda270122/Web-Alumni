@@ -1,0 +1,97 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="p-6">
+    <div class="bg-white dark:bg-[#1e293b] p-8 rounded-2xl border border-gray-200 dark:border-white/10 shadow-lg">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Gestión de Bolsa de Empleo</h2>
+                <p class="text-slate-600 dark:text-slate-400 text-sm">Administra las ofertas publicadas por los usuarios.</p>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
+                    Total: {{ ofertas|length }}
+                </div>
+
+                <a href="{% url 'home' %}" class="group flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-600 transition shadow-sm text-sm font-medium">
+                    <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                    Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-500 dark:text-slate-400">
+                <thead class="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-700 dark:text-slate-200">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">ID</th>
+                        <th scope="col" class="px-6 py-3">Usuario</th>
+                        <th scope="col" class="px-6 py-3">Detalle Oferta</th>
+                        <th scope="col" class="px-6 py-3">Fecha</th>
+                        <th scope="col" class="px-6 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for oferta in ofertas %}
+                    <tr class="bg-white border-b dark:bg-slate-800 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                        
+                        <td class="px-6 py-4 font-bold">#{{ oferta.pk }}</td>
+                        
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 uppercase">
+                                    {{ oferta.usuario.username|slice:":2" }}
+                                </div>
+                                <span class="font-medium text-slate-900 dark:text-white">
+                                    {{ oferta.usuario.first_name }} {{ oferta.usuario.last_name }}
+                                </span>
+                            </div>
+                            <span class="text-xs text-slate-400 block ml-10">{{ oferta.usuario.email }}</span>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <p class="italic text-slate-600 dark:text-slate-300 line-clamp-2 max-w-xs">
+                                "{{ oferta.texto_oferta }}"
+                            </p>
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                {% if oferta.palabra1 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ oferta.palabra1 }}</span>{% endif %}
+                                {% if oferta.palabra2 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ oferta.palabra2 }}</span>{% endif %}
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {{ oferta.creado|date:"d M Y" }}
+                        </td>
+
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <a href="{% url 'editar_oferta' oferta.pk %}" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Editar">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a href="{% url 'eliminar_oferta' oferta.pk %}" 
+                                   onclick="return confirm('¿Estás seguro de eliminar esta oferta? No se puede deshacer.');" 
+                                   class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
+                                    <i class="fa-solid fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                            <div class="flex flex-col items-center gap-2">
+                                <i class="fa-regular fa-folder-open text-3xl opacity-50"></i>
+                                <p>No hay ofertas registradas en el sistema.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

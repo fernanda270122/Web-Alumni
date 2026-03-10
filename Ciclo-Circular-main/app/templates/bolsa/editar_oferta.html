@@ -1,0 +1,83 @@
+{% extends request.user.is_staff|yesno:"base_admin.html,base_public.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 {% if not request.user.is_staff %}py-12{% else %}py-6{% endif %}">
+    
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        
+        <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                Editar Oferta Laboral
+            </h2>
+            
+            {% if request.user.is_staff %}
+                <a href="{% url 'gestion-bolsa' %}" class="group flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-600 transition shadow-sm text-sm font-medium">
+                    <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                    Volver
+                </a>
+            {% else %}
+                <a href="{% url 'mis_ofertas' %}" class="group flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-600 transition shadow-sm text-sm font-medium">
+                    <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                    Volver
+                </a>
+            {% endif %}
+        </div>
+
+        <form method="POST" class="p-8" x-data="{ loading: false }" @submit="loading = true">
+            {% csrf_token %}
+            
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
+                    Descripción y Requisitos del Puesto
+                </label>
+                <div class="relative">
+                    <textarea name="texto_oferta" rows="10" required 
+                        class="w-full p-5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition text-base leading-relaxed shadow-inner"
+                        placeholder="Describe el puesto..."
+                    >{{ oferta.texto_oferta }}</textarea>
+                    
+                    <div class="absolute bottom-4 right-4 text-slate-400 text-xs bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-600 shadow-sm">
+                        <i class="fa-solid fa-robot mr-1"></i> La IA regenerará los tags al guardar
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-8 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800/50">
+                <p class="text-xs text-blue-600 dark:text-blue-300 font-bold mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-tags"></i> Etiquetas Actuales (Se actualizarán automáticamente)
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    {% if oferta.palabra1 %}<span class="px-2 py-1 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded border border-slate-200 dark:border-slate-600">{{ oferta.palabra1 }}</span>{% endif %}
+                    {% if oferta.palabra2 %}<span class="px-2 py-1 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded border border-slate-200 dark:border-slate-600">{{ oferta.palabra2 }}</span>{% endif %}
+                    {% if oferta.palabra3 %}<span class="px-2 py-1 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded border border-slate-200 dark:border-slate-600">{{ oferta.palabra3 }}</span>{% endif %}
+                    {% if oferta.palabra4 %}<span class="px-2 py-1 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded border border-slate-200 dark:border-slate-600">{{ oferta.palabra4 }}</span>{% endif %}
+                    {% if oferta.palabra5 %}<span class="px-2 py-1 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded border border-slate-200 dark:border-slate-600">{{ oferta.palabra5 }}</span>{% endif %}
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                <button type="submit" 
+                    :disabled="loading"
+                    :class="loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-emerald-700'"
+                    class="bg-emerald-600 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-emerald-500/30 flex items-center gap-2">
+                    
+                    <template x-if="!loading">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                        </span>
+                    </template>
+
+                    <template x-if="loading">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i> Procesando IA...
+                        </span>
+                    </template>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

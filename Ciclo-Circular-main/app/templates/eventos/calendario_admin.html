@@ -1,0 +1,645 @@
+{% extends base_template|default:'base_admin.html' %}
+{% load static %}
+
+{% block sidebar %}
+    {% if base_template == 'base_admin.html' %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+<style>
+    :root { --fc-border-color: #e2e8f0; --fc-button-bg-color: #991b1b; --fc-button-border-color: #991b1b; --fc-button-hover-bg-color: #7f1d1d; --fc-today-bg-color: rgba(153, 27, 27, 0.05); --fc-text-color: #1e293b; }
+    .dark { --fc-page-bg-color: #1e293b; --fc-border-color: #334155; --fc-button-bg-color: #991b1b; --fc-button-border-color: #7f1d1d; --fc-today-bg-color: rgba(153, 27, 27, 0.15); --fc-text-color: #e2e8f0; }
+    .fc { font-family: 'Inter', sans-serif; }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: var(--fc-border-color); }
+    .fc-col-header-cell { background-color: #f8fafc; padding: 12px 0; }
+    .dark .fc-col-header-cell { background-color: #0f172a; }
+    .fc-button { border-radius: 0.5rem !important; font-weight: 600; text-transform: capitalize; padding: 0.5rem 1rem !important; font-size: 0.875rem !important; }
+    .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 800; color: var(--fc-text-color); }
+    @media (max-width: 768px) { .fc-toolbar-title { font-size: 1rem !important; } .fc-button { padding: 0.25rem 0.5rem !important; font-size: 0.75rem !important; } }
+    .fc-daygrid-event { border-radius: 4px; margin: 1px 2px; border: none !important; cursor: pointer; transition: transform 0.1s; }
+    .fc-daygrid-event:hover { transform: scale(1.02); z-index: 50; filter: brightness(1.1); }
+</style>
+
+<div class="{% if base_template == 'base_public.html' %}pt-10 max-w-7xl mx-auto px-4{% else %}max-w-[1600px] mx-auto{% endif %} space-y-6 h-full flex flex-col">
+
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-[#1e293b] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div>
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary/10 rounded-lg text-primary shadow-sm">
+                    <i class="fa-solid fa-calendar-days text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Calendario Institucional</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">{{ nombre_empresa }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <a href="{% url volver_url|default:'home_admin' %}" class="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition">
+                <i class="fa-solid fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 relative">
+        <div id='calendar' class="min-h-[750px]"></div>
+    </div>
+
+</div>
+
+<div id="eventoModal" class="fixed inset-0 z-[9999] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity" onclick="cerrarModal()"></div>
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+        <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
+            
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-white/5 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-regular fa-calendar-check text-primary"></i> <span id="modalTitle">Evento</span>
+                </h3>
+                <button type="button" onclick="cerrarModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <div class="px-6 py-6 max-h-[70vh] overflow-y-auto bg-white dark:bg-[#1e293b]">
+                
+                <div id="mainView">
+                    <form id="formEvento" class="space-y-4">
+                        <input type="hidden" id="eventId">
+                        
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-sitemap"></i> Alcance</label>
+                                <span id="nivelBadge" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-200 text-slate-600">Nivel</span>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Facultad</label>
+                                    <select id="selectFacultad" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none"></select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Depto (Opcional)</label>
+                                        <select id="selectDepartamento" disabled class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm focus:ring-2 focus:ring-primary outline-none disabled:opacity-60"></select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Carrera (Opcional)</label>
+                                        <select id="selectCarrera" disabled class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm focus:ring-2 focus:ring-primary outline-none disabled:opacity-60"></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Título del Evento</label>
+                            <input type="text" id="eventTitle" required class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Inicio</label>
+                                <input type="datetime-local" id="eventStart" required class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Término</label>
+                                <input type="datetime-local" id="eventEnd" required class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Lugar</label>
+                                <input type="text" id="eventPlace" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Costo</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-400">$</span>
+                                    <input type="number" id="eventCost" value="0" class="w-full pl-7 pr-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Descripción</label>
+                            <textarea id="eventDesc" rows="3" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none resize-none"></textarea>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="questionsView" class="hidden space-y-6">
+                    
+                    {% if user.is_staff or user.universidad_coordinador %}
+                    <div class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800">
+                        <label class="block text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase mb-2">
+                            <i class="fa-solid fa-gear mr-1"></i> Configurar Pregunta para el Público
+                        </label>
+                        <div class="flex gap-2">
+                            <input type="text" id="eventCoordinatorQuestion" 
+                                   onblur="guardarPreguntaRapido(this.value)"
+                                   class="flex-1 px-4 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                   placeholder="Ej: ¿Qué experiencia tienen con este tema?">
+                        </div>
+                        <p id="msgGuardado" class="text-[10px] text-emerald-600 font-bold mt-2 hidden">
+                            <i class="fa-solid fa-check"></i> Pregunta guardada automáticamente.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white dark:bg-white/5 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400 font-bold">
+                                <i class="fa-regular fa-pen-to-square"></i> <h3>Pregunta al expositor</h3>
+                            </div>
+                            <form hx-post="/api/preguntas/enviar/" hx-swap="none">
+                                {% csrf_token %}
+                                <input type="hidden" name="evento_id" class="input-evento-id-ref">
+                                <input type="hidden" name="tipo" value="expositor">
+                                <textarea name="texto" rows="2" class="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm resize-none focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Escribe tu pregunta aquí..." required></textarea>
+                                <button type="submit" class="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-4 rounded-lg text-xs transition shadow-sm">Enviar</button>
+                            </form>
+                        </div>
+
+                        <div class="bg-white dark:bg-white/5 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-2 opacity-5 text-emerald-600 pointer-events-none"><i class="fa-solid fa-comments text-6xl"></i></div>
+
+                            <div class="relative z-10">
+                                <div class="flex items-center gap-2 mb-2 text-emerald-600 dark:text-emerald-400 font-bold">
+                                    <i class="fa-solid fa-reply"></i> <h3>Responde al expositor</h3>
+                                </div>
+
+                                <div class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-r-lg">
+                                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200 italic">
+                                        "<span id="spanPreguntaVistaPrevia">El expositor aun no ha hecho ninguna pregunta</span>"
+                                    </p>
+                                </div>
+
+                                <form hx-post="/api/preguntas/enviar/" hx-swap="none">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="evento_id" class="input-evento-id-ref">
+                                    <input type="hidden" name="tipo" value="publico">
+                                    <textarea name="texto" rows="2" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none transition" placeholder="Tu respuesta..." required></textarea>
+                                    <button type="submit" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg shadow-emerald-500/20 transition transform hover:-translate-y-0.5">Enviar Respuesta</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if user.is_staff or user.universidad_coordinador %}
+                    <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
+                        <h4 class="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4 text-center">
+                            <i class="fa-solid fa-wand-magic-sparkles text-purple-500 mr-2"></i>Selección Inteligente (Top 5)
+                        </h4>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="text-center">
+                                <p class="text-xs font-bold text-red-600 dark:text-red-400">N de preguntas recibidas: <span id="countPreguntas">0</span></p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs font-bold text-red-600 dark:text-red-400">N de respuestas recibidas: <span id="countAportes">0</span></p>
+                            </div>
+                        </div>
+
+                        <div id="resultados-ia-container" class="grid grid-cols-1 gap-4"
+                             hx-trigger="load, every 5s, actualizarResultados from:body" 
+                             hx-target="#resultados-ia-content"
+                             hx-swap="innerHTML">
+                             <div id="resultados-ia-content">
+                                 <div class="flex flex-col items-center justify-center py-8 text-slate-400 opacity-50">
+                                     <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2"></i>
+                                     <p class="text-xs">Esperando preguntas...</p>
+                                 </div>
+                             </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700">
+                <div class="flex flex-wrap items-center justify-end gap-2" id="actionButtons">
+                    
+                    <a href="#" id="btnGestionAsistencia" class="hidden mr-auto text-amber-600 hover:text-amber-700 font-bold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 px-2 py-2">
+                        <i class="fa-solid fa-users"></i> <span class="hidden sm:inline">Asistencia</span><span class="sm:hidden">Asist.</span>
+                    </a>
+
+                    {% if user.is_staff or user.universidad_coordinador %}
+                    <button type="button" id="btnToggleQuestions" onclick="toggleQuestionsView()" class="px-3 py-2 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-xs sm:text-sm font-bold transition flex items-center gap-2">
+                        <i class="fa-regular fa-comments"></i> <span id="txtBtnQuestions">Preguntas</span>
+                    </button>
+                    {% endif %}
+
+                    <button type="button" id="btnEliminar" class="hidden px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs sm:text-sm font-bold transition">Eliminar</button>
+                    <button type="button" onclick="cerrarModal()" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-white/5 text-xs sm:text-sm font-bold transition">Cancelar</button>
+                    <button type="button" id="btnGuardar" class="px-3 py-2 rounded-lg bg-primary hover:bg-primaryHover text-white text-xs sm:text-sm font-bold shadow-lg shadow-primary/20 transition">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Lógica Central de Sincronización HTML y Calendario CON CANDADO
+    if (!window.hasCalendarHtmxListener) {
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.successful && evt.detail.requestConfig.path.includes('/api/preguntas/enviar/')) {
+                // 1. Extraer datos antes de limpiar
+                let formData = new FormData(evt.detail.elt);
+                let tipo = formData.get('tipo');
+                let evtId = formData.get('evento_id');
+                
+                // 2. Limpiar caja de texto sin borrar los hidden
+                let textarea = evt.detail.elt.querySelector('textarea');
+                if(textarea) textarea.value = '';
+                
+                // 3. Sumar contador visual en HTML
+                let spanId = tipo === 'expositor' ? 'countPreguntas' : 'countAportes';
+                let span = document.getElementById(spanId);
+                if (span) span.innerText = (parseInt(span.innerText) || 0) + 1;
+
+                // 4. Actualizar Memoria FullCalendar para que persista
+                if(typeof window.calendarInstance !== 'undefined' && window.calendarInstance && evtId) {
+                    let ev = window.calendarInstance.getEventById(evtId);
+                    if(ev) {
+                        let propName = tipo === 'expositor' ? 'preguntas_count' : 'aportes_count';
+                        let newVal = (parseInt(ev.extendedProps[propName]) || 0) + 1;
+                        ev.setExtendedProp(propName, newVal);
+                    }
+                }
+                
+                // 5. Refrescar listado IA
+                let container = document.getElementById('resultados-ia-container');
+                if(container) htmx.trigger(container, 'actualizarResultados');
+            }
+        });
+        window.hasCalendarHtmxListener = true;
+    }
+
+    function guardarPreguntaRapido(nuevaPregunta) {
+        const eventId = document.getElementById('eventId').value;
+        if (!eventId) return;
+
+        let textoMostrar = nuevaPregunta && nuevaPregunta.trim() !== "" ? nuevaPregunta : 'El expositor aun no ha hecho ninguna pregunta';
+        const spanVistaPrevia = document.getElementById('spanPreguntaVistaPrevia');
+        if (spanVistaPrevia) spanVistaPrevia.innerText = textoMostrar;
+        
+        if(window.calendarInstance) {
+            let ev = window.calendarInstance.getEventById(eventId);
+            if(ev) ev.setExtendedProp('pregunta_del_coordinador', textoMostrar);
+        }
+
+        fetch('/api/guardar_evento/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({
+                id: eventId,
+                empresa_id: "{{ id_empresa|default:'0' }}",
+                pregunta_del_coordinador: nuevaPregunta,
+                solo_pregunta: true
+            })
+        }).then(r => r.json()).then(data => {
+            if(data.status === 'success') {
+                const msg = document.getElementById('msgGuardado');
+                if(msg) {
+                    msg.classList.remove('hidden');
+                    setTimeout(() => msg.classList.add('hidden'), 2000);
+                }
+            }
+        });
+    }
+
+    function abrirModal() { document.getElementById('eventoModal').classList.remove('hidden'); }
+    function cerrarModal() { 
+        document.getElementById('eventoModal').classList.add('hidden'); 
+        const container = document.getElementById('resultados-ia-container');
+        if(container) { 
+            container.setAttribute('hx-trigger', 'none'); 
+            htmx.process(container); 
+        }
+    }
+
+    function getCookie(n){let c=null;if(document.cookie&&document.cookie!==''){let s=document.cookie.split(';');for(let i=0;i<s.length;i++){let k=s[i].trim();if(k.substring(0,n.length+1)===(n+'=')){c=decodeURIComponent(k.substring(n.length+1));break;}}}return c;}
+
+    function toggleQuestionsView() {
+        const mainView = document.getElementById('mainView');
+        const qView = document.getElementById('questionsView');
+        const btnTxt = document.getElementById('txtBtnQuestions');
+        const btnEliminar = document.getElementById('btnEliminar');
+        const btnGuardar = document.getElementById('btnGuardar');
+        const btnAsistencia = document.getElementById('btnGestionAsistencia');
+        const container = document.getElementById('resultados-ia-container');
+        const evtId = document.getElementById('eventId').value;
+
+        if (qView.classList.contains('hidden')) {
+            mainView.classList.add('hidden');
+            qView.classList.remove('hidden');
+            btnTxt.innerText = "Volver";
+            
+            if(btnEliminar) btnEliminar.classList.add('hidden');
+            if(btnGuardar) btnGuardar.classList.add('hidden');
+            if(btnAsistencia) btnAsistencia.classList.add('hidden');
+
+            if(container && evtId && typeof htmx !== 'undefined') {
+                document.getElementById('resultados-ia-content').innerHTML = '<div class="flex flex-col items-center justify-center py-4 opacity-50"><i class="fa-solid fa-circle-notch fa-spin text-xl mb-2"></i><p class="text-xs">Cargando...</p></div>';
+                const url = '/api/preguntas/top/' + evtId + '/';
+                htmx.ajax('GET', url, { target: '#resultados-ia-content', swap: 'innerHTML' });
+                container.setAttribute('hx-get', url);
+                container.setAttribute('hx-trigger', 'every 5s, actualizarResultados from:body');
+                htmx.process(container);
+            }
+
+        } else {
+            qView.classList.add('hidden');
+            mainView.classList.remove('hidden');
+            btnTxt.innerText = "Preguntas";
+            
+            if(btnEliminar) btnEliminar.classList.remove('hidden');
+            if(btnGuardar) btnGuardar.classList.remove('hidden');
+            if(evtId && btnAsistencia) {
+                btnAsistencia.classList.remove('hidden');
+                btnAsistencia.classList.add('flex');
+            }
+            if(container) { 
+                container.setAttribute('hx-trigger', 'none'); 
+                htmx.process(container); 
+            }
+        }
+    }
+
+    (function() {
+        window.calendarInstance = null;
+
+        function initCalendarPage() {
+            var calendarEl = document.getElementById('calendar');
+            if (!calendarEl) return;
+            
+            if(window.calendarInstance) { window.calendarInstance.destroy(); window.calendarInstance = null; }
+
+            var idEmpresaActual = "{{ id_empresa|default:'0' }}"; 
+            var userCanEdit = "{{ es_editor|yesno:'true,false' }}" === "true";
+            var isMobile = window.innerWidth < 768;
+
+            const selFacultad = document.getElementById('selectFacultad');
+            const selDepto = document.getElementById('selectDepartamento');
+            const selCarrera = document.getElementById('selectCarrera');
+            const nivelBadge = document.getElementById('nivelBadge');
+            const countPreguntas = document.getElementById('countPreguntas');
+            const countAportes = document.getElementById('countAportes');
+
+            function actualizarBadgeNivel() {
+                if(selCarrera.value && selCarrera.value !== "") {
+                    nivelBadge.className = 'px-2 py-1 rounded text-[10px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-200';
+                    nivelBadge.innerText = 'Nivel: CARRERA';
+                } else if (selDepto.value && selDepto.value !== "") {
+                    nivelBadge.className = 'px-2 py-1 rounded text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-200';
+                    nivelBadge.innerText = 'Nivel: DEPARTAMENTO';
+                } else if (selFacultad.value && selFacultad.value !== "") {
+                    nivelBadge.className = 'px-2 py-1 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200';
+                    nivelBadge.innerText = 'Nivel: FACULTAD';
+                } else {
+                    nivelBadge.className = 'px-2 py-1 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200';
+                    nivelBadge.innerText = 'Nivel: UNIVERSIDAD';
+                }
+            }
+
+            function cargarFacultades(uniId) {
+                return fetch(`/api/get_facultades/?universidad_id=${uniId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        let prevVal = selFacultad.value;
+                        selFacultad.innerHTML = '<option value="">Seleccione Facultad...</option>';
+                        data.forEach(item => { selFacultad.innerHTML += `<option value="${item.id}">${item.nombre}</option>`; });
+                        if(prevVal) selFacultad.value = prevVal;
+                    });
+            }
+
+            selFacultad.onchange = function() {
+                let facId = this.value;
+                selDepto.innerHTML = '<option value="">(Opcional) Todos...</option>'; selDepto.disabled = true;
+                selCarrera.innerHTML = '<option value="">(Opcional) Todas...</option>'; selCarrera.disabled = true;
+                actualizarBadgeNivel();
+                if(facId) {
+                    selDepto.disabled = false;
+                    fetch(`/api/get_departamentos/?facultad_id=${facId}`).then(r => r.json())
+                        .then(data => data.forEach(item => selDepto.innerHTML += `<option value="${item.id}">${item.nombre}</option>`));
+                }
+            };
+
+            selDepto.onchange = function() {
+                let depId = this.value;
+                selCarrera.innerHTML = '<option value="">(Opcional) Todas...</option>'; selCarrera.disabled = true;
+                actualizarBadgeNivel();
+                if(depId) {
+                    selCarrera.disabled = false;
+                    fetch(`/api/get_carreras/?departamento_id=${depId}`).then(r => r.json())
+                        .then(data => data.forEach(item => selCarrera.innerHTML += `<option value="${item.id}">${item.nombre}</option>`));
+                }
+            };
+            selCarrera.onchange = actualizarBadgeNivel;
+
+            window.calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es', 
+                themeSystem: 'standard', 
+                height: '100%',
+                headerToolbar: { 
+                    left: isMobile ? 'prev,next' : 'prev,next today', 
+                    center: 'title', 
+                    right: isMobile ? 'dayGridMonth,listMonth' : 'dayGridMonth,timeGridWeek,listMonth' 
+                },
+                editable: userCanEdit, 
+                selectable: userCanEdit, 
+                dayMaxEvents: 3, 
+                events: '/api/eventos/?empresa_id=' + idEmpresaActual,
+                eventContent: function(arg) {
+                    return { html: `<div class="w-full flex items-center bg-primary hover:bg-primaryHover rounded px-2 py-1 overflow-hidden text-white text-xs font-semibold cursor-pointer shadow-sm transition-colors">${arg.event.title}</div>` }
+                },
+                select: function(info) {
+                    if (!userCanEdit) return;
+                    if(idEmpresaActual === "0") { alert("Error: No hay universidad seleccionada."); return; }
+                    
+                    document.getElementById('mainView').classList.remove('hidden');
+                    document.getElementById('questionsView').classList.add('hidden');
+                    if(document.getElementById('txtBtnQuestions')) document.getElementById('txtBtnQuestions').innerText = "Preguntas";
+
+                    document.getElementById('formEvento').reset(); 
+                    document.getElementById('eventId').value = ''; 
+                    document.querySelectorAll('.input-evento-id-ref').forEach(el => el.value = '');
+
+                    selFacultad.value = "";
+                    selDepto.innerHTML = '<option value="">(Opcional) Todos...</option>'; selDepto.disabled = true;
+                    selCarrera.innerHTML = '<option value="">(Opcional) Todas...</option>'; selCarrera.disabled = true;
+                    actualizarBadgeNivel();
+                    cargarFacultades(idEmpresaActual);
+                    let startStr = info.startStr;
+                    document.getElementById('eventStart').value = info.allDay ? startStr + "T09:00" : startStr.slice(0, 16);
+                    document.getElementById('eventEnd').value = info.allDay ? startStr + "T10:00" : info.endStr.slice(0, 16);
+                    document.getElementById('modalTitle').innerText = "Nuevo Evento";
+                    
+                    document.getElementById('btnEliminar').classList.add('hidden');
+                    document.getElementById('btnGuardar').classList.remove('hidden');
+                    
+                    if(document.getElementById('btnGestionAsistencia')) document.getElementById('btnGestionAsistencia').classList.add('hidden');
+                    if(document.getElementById('btnToggleQuestions')) document.getElementById('btnToggleQuestions').classList.add('hidden');
+
+                    abrirModal();
+                },
+                eventClick: function(info) {
+                    var event = info.event; 
+                    var props = event.extendedProps;
+
+                    document.getElementById('mainView').classList.remove('hidden');
+                    document.getElementById('questionsView').classList.add('hidden');
+                    if(document.getElementById('txtBtnQuestions')) document.getElementById('txtBtnQuestions').innerText = "Preguntas";
+
+                    document.getElementById('eventId').value = event.id;
+                    document.querySelectorAll('.input-evento-id-ref').forEach(el => el.value = event.id);
+
+                    document.getElementById('eventTitle').value = event.title;
+                    document.getElementById('modalTitle').innerText = userCanEdit ? "Editar Evento" : "Detalles del Evento";
+                    const toLocal = (d) => d ? new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0,16) : "";
+                    document.getElementById('eventStart').value = toLocal(event.start);
+                    document.getElementById('eventEnd').value = toLocal(event.end);
+                    document.getElementById('eventPlace').value = props.lugar || ''; 
+                    document.getElementById('eventCost').value = props.costo || 0;
+                    document.getElementById('eventDesc').value = props.description || '';
+                    
+                    let p_coord = props.pregunta_del_coordinador;
+                    if (!p_coord || p_coord === "null" || p_coord.trim() === "") p_coord = "El expositor aun no ha hecho ninguna pregunta";
+                    
+                    document.getElementById('eventCoordinatorQuestion').value = props.pregunta_del_coordinador || '';
+                    const spanVistaPrevia = document.getElementById('spanPreguntaVistaPrevia');
+                    if (spanVistaPrevia) spanVistaPrevia.innerText = p_coord;
+                    
+                    if(countPreguntas) countPreguntas.innerText = parseInt(props.preguntas_count) || 0;
+                    if(countAportes) countAportes.innerText = parseInt(props.aportes_count) || 0;
+
+                    cargarFacultades(idEmpresaActual).then(() => {
+                        if (props.facultad_id) {
+                            selFacultad.value = props.facultad_id;
+                            selDepto.disabled = false;
+                            actualizarBadgeNivel();
+                            fetch(`/api/get_departamentos/?facultad_id=${props.facultad_id}`).then(r=>r.json()).then(ds => {
+                                selDepto.innerHTML = '<option value="">(Opcional) Todos...</option>';
+                                ds.forEach(d => selDepto.innerHTML += `<option value="${d.id}">${d.nombre}</option>`);
+                                if(props.departamento_id) {
+                                    selDepto.value = props.departamento_id;
+                                    selCarrera.disabled = false;
+                                    actualizarBadgeNivel();
+                                    fetch(`/api/get_carreras/?departamento_id=${props.departamento_id}`).then(r=>r.json()).then(cs => {
+                                        selCarrera.innerHTML = '<option value="">(Opcional) Todas...</option>';
+                                        cs.forEach(c => selCarrera.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+                                        if(props.carrera_id) selCarrera.value = props.carrera_id;
+                                        actualizarBadgeNivel();
+                                    });
+                                }
+                            });
+                        } else { selFacultad.value = ""; actualizarBadgeNivel(); }
+                    });
+                    
+                    let inputs = document.querySelectorAll('#formEvento input, #formEvento textarea, #formEvento select');
+                    if (userCanEdit) {
+                        inputs.forEach(input => { input.disabled = false; });
+                        document.getElementById('btnEliminar').classList.remove('hidden');
+                        document.getElementById('btnGuardar').classList.remove('hidden');
+                        
+                        if(document.getElementById('btnGestionAsistencia')) {
+                            var btn = document.getElementById('btnGestionAsistencia');
+                            btn.classList.remove('hidden');
+                            btn.classList.add('flex');
+                            var urlAsistencia = "{% url 'gestion_asistencia' 999 %}".replace('999', event.id);
+                            btn.href = urlAsistencia; 
+                        }
+                        
+                        if(document.getElementById('btnToggleQuestions')) {
+                            document.getElementById('btnToggleQuestions').classList.remove('hidden');
+                            document.getElementById('btnToggleQuestions').classList.add('flex');
+                        }
+
+                    } else {
+                        inputs.forEach(input => { input.disabled = true; });
+                        document.getElementById('btnEliminar').classList.add('hidden');
+                        document.getElementById('btnGuardar').classList.add('hidden');
+                        if(document.getElementById('btnGestionAsistencia')) document.getElementById('btnGestionAsistencia').classList.add('hidden');
+                    }
+                    abrirModal();
+                },
+                eventDrop: function(info) { if(userCanEdit) actualizarFechasBackend(info.event); },
+                eventResize: function(info) { if(userCanEdit) actualizarFechasBackend(info.event); }
+            });
+            window.calendarInstance.render();
+            setTimeout(() => { window.calendarInstance.updateSize(); }, 50);
+        }
+
+        function actualizarFechasBackend(event) {
+            fetch('/api/guardar_evento/', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+                body: JSON.stringify({
+                    id: event.id, empresa_id: "{{ id_empresa|default:'0' }}", title: event.title, start: event.start.toISOString(), 
+                    end: event.end ? event.end.toISOString() : event.start.toISOString(),
+                    lugar: event.extendedProps.lugar, costo: event.extendedProps.costo, description: event.extendedProps.description,
+                })
+            });
+        }
+
+        const btnGuardar = document.getElementById('btnGuardar');
+        if(btnGuardar) {
+            btnGuardar.onclick = function() {
+                let idEmpresaActual = "{{ id_empresa|default:'0' }}";
+                let startInput = document.getElementById('eventStart').value;
+                let endInput = document.getElementById('eventEnd').value;
+                if (startInput >= endInput) { alert("La fecha de fin debe ser posterior a la de inicio."); return; }
+                
+                var data = {
+                    id: document.getElementById('eventId').value, 
+                    empresa_id: idEmpresaActual,
+                    facultad_id: document.getElementById('selectFacultad').value || null,
+                    departamento_id: document.getElementById('selectDepartamento').value || null,
+                    carrera_id: document.getElementById('selectCarrera').value || null,
+                    title: document.getElementById('eventTitle').value,
+                    start: new Date(startInput).toISOString(), 
+                    end: new Date(endInput).toISOString(),      
+                    lugar: document.getElementById('eventPlace').value, 
+                    costo: document.getElementById('eventCost').value, 
+                    description: document.getElementById('eventDesc').value,
+                    pregunta_del_coordinador: document.getElementById('eventCoordinatorQuestion').value 
+                };
+
+                fetch('/api/guardar_evento/', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+                    body: JSON.stringify(data)
+                }).then(r => r.json()).then(d => { 
+                    if(d.status === 'success'){ 
+                        cerrarModal(); 
+                        window.calendarInstance.refetchEvents(); 
+                    } else { alert(d.message); } 
+                });
+            };
+        }
+
+        const btnEliminar = document.getElementById('btnEliminar');
+        if(btnEliminar) {
+            btnEliminar.onclick = function() {
+                if(!confirm("¿Eliminar?")) return;
+                fetch('/api/eliminar_evento/', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+                    body: JSON.stringify({id: document.getElementById('eventId').value})
+                }).then(r => r.json()).then(d => { if(d.status === 'success'){ cerrarModal(); window.calendarInstance.refetchEvents(); }});
+            };
+        }
+
+        if (typeof htmx !== 'undefined') {
+            htmx.onLoad(function(content) {
+                if (content.querySelector && content.querySelector('#calendar')) { initCalendarPage(); } else if (document.getElementById('calendar')) { initCalendarPage(); }
+            });
+        } else {
+            document.addEventListener('DOMContentLoaded', initCalendarPage);
+        }
+        initCalendarPage();
+    })();
+</script>
+{% endblock %}

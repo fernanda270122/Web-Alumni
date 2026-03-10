@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Reporte de Asistentes</title>
+    <style type="text/css">
+        @page {
+            size: letter;
+            margin: 2cm;
+        }
+        body {
+            font-family: Helvetica, sans-serif;
+            font-size: 10pt;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #444;
+            padding-bottom: 10px;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 18pt;
+            margin: 0;
+        }
+        .meta {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .meta p {
+            margin: 2px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+            font-weight: bold;
+            padding: 8px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        td {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            color: #444;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+            text-align: center;
+            font-size: 8pt;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Lista de Asistentes Confirmados</h1>
+    </div>
+
+    <div class="meta">
+        <p><strong>Evento:</strong> {{ evento.titulo }}</p>
+        <p><strong>Lugar:</strong> {{ evento.lugar }}</p>
+        <p><strong>Fecha:</strong> {{ evento.inicio|date:"d/m/Y H:i" }}</p>
+        <p><strong>Total:</strong> {{ confirmados|length }} personas</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="5%">#</th>
+                <th width="25%">Nombre</th>
+                <th width="25%">Apellido</th>
+                <th width="25%">Email</th>
+                <th width="20%">Carrera</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inv in confirmados %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ inv.usuario.first_name }}</td>
+                <td>{{ inv.usuario.last_name }}</td>
+                <td>{{ inv.usuario.email }}</td>
+                <td>
+                    {% if inv.usuario.carrera %}
+                        {{ inv.usuario.carrera.nombre }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" align="center">No hay asistentes confirmados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Generado el {% now "d/m/Y H:i" %} - Sistema de Gestión Alumni
+    </div>
+
+</body>
+</html>

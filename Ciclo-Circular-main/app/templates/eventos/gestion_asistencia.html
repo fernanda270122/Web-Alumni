@@ -1,0 +1,220 @@
+{% extends base_template|default:'base_admin.html' %}
+{% load static %}
+
+{% block sidebar %}
+    {% if base_template == 'base_admin.html' %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="{% if base_template == 'base_public.html' %}pt-10 max-w-7xl mx-auto px-4{% else %}max-w-7xl mx-auto{% endif %} space-y-8">
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                <i class="fa-solid fa-users-viewfinder text-primary"></i> 
+                Gestión de Asistencia
+            </h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Administra invitaciones y confirmaciones para Universidad: <span class="font-semibold text-primary">{{ evento.universidad.nombre }}</span>.
+            </p>
+        </div>
+        
+        <a href="{% url volver_url %}{% if volver_url == 'ver_calendario' %}?empresa={{ evento.universidad.pk }}{% endif %}" class="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-white/10 transition">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Calendario
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 md:p-8 relative overflow-hidden group">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+
+        {% if user.is_staff or user.universidad_coordinador == evento.universidad %}
+        <div class="absolute top-6 right-6 z-20">
+            <a href="{% url 'reporte_confirmados' evento.pk %}" 
+               class="w-12 h-12 flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg shadow-purple-500/20 transition transform hover:scale-110 border border-purple-500"
+               title="Ver Reporte de Confirmados y PDF">
+                <i class="fas fa-clipboard-list text-xl"></i>
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="relative z-10 text-center space-y-4">
+            <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight uppercase pr-12">
+                 UNIVERSIDAD: {{ evento.universidad.nombre }}
+            </h1>
+            <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight uppercase">
+                 EVENTO: {{ evento.titulo }}
+            </h1>
+            
+            <div class="flex justify-center items-center gap-3 flex-wrap">
+                {% if evento.carrera %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
+                        <i class="fas fa-graduation-cap mr-2"></i> {{ evento.carrera.nombre }}
+                    </span>
+                    <span class="text-xs text-slate-400 uppercase tracking-widest font-bold border-l border-slate-300 pl-3 ml-1">
+                        {{ evento.facultad.nombre }}
+                    </span>
+                {% elif evento.departamento %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        <i class="fas fa-building mr-2"></i> {{ evento.departamento.nombre }}
+                    </span>
+                    <span class="text-xs text-slate-400 uppercase tracking-widest font-bold border-l border-slate-300 pl-3 ml-1">
+                        {{ evento.facultad.nombre }}
+                    </span>
+                {% elif evento.facultad %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                        <i class="fas fa-university mr-2"></i> {{ evento.facultad.nombre }}
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                        <i class="fas fa-globe mr-2"></i> Evento Global
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white dark:bg-[#1e293b] p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Usuarios</p>
+                <p class="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">{{ stats.total }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-users"></i>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#1e293b] p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pendientes</p>
+                <p class="text-3xl font-extrabold text-amber-500 mt-1">{{ stats.pendientes }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl">
+                <i class="fa-regular fa-clock"></i>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#1e293b] p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Confirmados</p>
+                <p class="text-3xl font-extrabold text-emerald-500 mt-1">{{ stats.confirmados }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-check-circle"></i>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_staff or user.universidad_coordinador == evento.universidad %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <a href="{% url 'enviar_solicitud_confirmacion' evento.pk %}" onclick="return confirm('¿Enviar correo a los Usuarios?')" 
+           class="group flex flex-col items-center justify-center p-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition shadow-lg shadow-blue-500/20 border border-blue-500 transform hover:-translate-y-1">
+            <i class="fas fa-paper-plane text-2xl mb-2 group-hover:scale-110 transition"></i>
+            <span class="font-bold">Enviar Invitación</span>
+            <span class="text-[10px] opacity-80 mt-1 uppercase tracking-wide">A usuarios</span>
+        </a>
+
+        <a href="{% url 'enviar_recordatorio_pendientes' evento.pk %}" onclick="return confirm('¿Enviar recordatorio?')" 
+           class="group flex flex-col items-center justify-center p-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition shadow-lg shadow-amber-500/20 border border-amber-400 transform hover:-translate-y-1">
+            <i class="fas fa-bell text-2xl mb-2 group-hover:scale-110 transition"></i>
+            <span class="font-bold">Recordar Pendientes</span>
+            <span class="text-[10px] opacity-80 mt-1 uppercase tracking-wide">Reenviar Invitación</span>
+        </a>
+
+        <a href="{% url 'enviar_formal' evento.pk %}" onclick="return confirm('¿Enviar entrada?')" 
+           class="group flex flex-col items-center justify-center p-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-lg shadow-emerald-500/20 border border-emerald-500 transform hover:-translate-y-1">
+            <i class="fas fa-ticket text-2xl mb-2 group-hover:scale-110 transition"></i>
+            <span class="font-bold">Enviar Entradas</span>
+            <span class="text-[10px] opacity-80 mt-1 uppercase tracking-wide">A confirmados</span>
+        </a>
+    </div>
+    {% else %}
+    <div class="p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center text-slate-500 dark:text-slate-400 text-sm">
+        <i class="fas fa-lock mr-2"></i> Modo solo lectura. No tienes permisos para enviar correos masivos.
+    </div>
+    {% endif %}
+
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-white/5 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700 dark:text-slate-200 text-xs uppercase tracking-wide">
+                Listado Detallado de Asistencia
+            </h3>
+            <span class="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded font-mono">
+                Total: {{ invitaciones|length }}
+            </span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                        <th class="px-6 py-4">Usuario</th>
+                        <th class="px-6 py-4">Origen</th>
+                        <th class="px-6 py-4">Email</th>
+                        <th class="px-6 py-4 text-center">Estado</th>
+                        <th class="px-6 py-4 text-right">Última Act.</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                    {% for inv in invitaciones %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition group">
+                        <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                            {{ inv.usuario.first_name }} {{ inv.usuario.last_name }}
+                        </td>
+                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs">
+                            {% if inv.usuario.carrera %}
+                                <span class="text-slate-700 dark:text-slate-300 font-medium">{{ inv.usuario.carrera.nombre }}</span>
+                            {% else %}
+                                <span class="italic opacity-50">--</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs font-mono">
+                            {{ inv.usuario.email }}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if inv.estado == 'SIN_ENVIAR' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                    No Notificado
+                                </span>
+                            {% elif inv.estado == 'ENVIADO' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                    <i class="fa-regular fa-clock mr-1"></i> Pendiente
+                                </span>
+                            {% elif inv.estado == 'CONFIRMADO' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                    <i class="fa-solid fa-check mr-1"></i> Confirmado
+                                </span>
+                            {% elif inv.estado == 'RECHAZADO' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800">
+                                    Rechazado
+                                </span>
+                            {% elif inv.estado == 'ENTRADA_ENVIADA' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                    <i class="fa-solid fa-ticket mr-1"></i> Ticket Enviado
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right text-slate-400 text-xs">
+                            {{ inv.fecha_actualizacion|date:"d/m H:i" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                            <div class="flex flex-col items-center gap-2">
+                                <i class="fa-solid fa-users-slash text-3xl opacity-30"></i>
+                                <p class="text-sm">No hay usuarios registrados para el nivel de este evento.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

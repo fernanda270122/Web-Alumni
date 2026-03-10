@@ -1,0 +1,118 @@
+{% extends 'base_public.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+            <i class="fa-solid fa-briefcase text-emerald-500 mr-2"></i> Mis Oportunidades
+        </h2>
+        <p class="text-slate-500">Ofertas de la red seleccionadas para ti por IA.</p>
+    </div>
+
+    {% if matches %}
+        <div class="space-y-6">
+            {% for item in matches %}
+            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                
+                <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-600">
+                                {{ item.oferta.usuario.username|slice:":2"|upper }}
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-bold text-slate-900 dark:text-white text-sm">
+                                    {% if item.oferta.usuario.first_name %}
+                                        {{ item.oferta.usuario.first_name }} {{ item.oferta.usuario.last_name }}
+                                    {% else %}
+                                        {{ item.oferta.usuario.username }}
+                                    {% endif %}
+                                </h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+                                        Oferta Laboral
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">• {{ item.oferta.creado|timesince }} atrás</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-medium text-slate-800 dark:text-white italic mb-4">
+                        "{{ item.oferta.texto_oferta }}"
+                    </h3>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase mr-2">Tags IA:</span>
+                        {% for tag in item.todas_tags %}
+                            <span class="tag-badge">{{ tag }}</span>
+                        {% empty %}
+                            <span class="text-[10px] text-slate-400 italic">Sin tags</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-black/20 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Tu Nivel de Match</h4>
+                        {% if item.match >= 80 %}
+                        <span class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                            Recomendado
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between hover:border-emerald-500 transition group gap-4">
+                        
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center font-bold text-xs 
+                                {% if item.match >= 80 %}border-emerald-500 text-emerald-600 bg-emerald-50
+                                {% elif item.match >= 40 %}border-amber-500 text-amber-600 bg-amber-50
+                                {% else %}border-red-500 text-red-600 bg-red-50{% endif %}">
+                                {{ item.match }}%
+                            </div>
+                            
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Tus Palabras Clave:</p>
+                                <div class="flex flex-wrap gap-1">
+                                    {% for match_word in item.coincidencias %}
+                                    <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                        <i class="fa-solid fa-check text-[8px]"></i> {{ match_word }}
+                                    </span>
+                                    {% empty %}
+                                    <span class="text-xs text-slate-400 italic">Coincidencia parcial</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="mailto:{{ item.oferta.usuario.email }}" class="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wide border border-emerald-200 rounded px-4 py-2 hover:bg-emerald-50 transition text-center whitespace-nowrap">
+                            Contactar Reclutador <i class="fa-regular fa-envelope ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-20 bg-slate-50 dark:bg-slate-800 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+            <i class="fa-solid fa-robot text-4xl text-slate-300 mb-4"></i>
+            <h3 class="text-lg font-bold text-slate-700 dark:text-white">Sin matches todavía</h3>
+            <p class="text-slate-500 max-w-sm mx-auto mt-2 text-sm">
+                Sube tu CV para que nuestra IA pueda compararlo con las ofertas disponibles.
+            </p>
+        </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .tag-badge {
+        @apply px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600;
+    }
+</style>
+{% endblock %}

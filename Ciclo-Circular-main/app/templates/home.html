@@ -1,0 +1,391 @@
+{% extends 'base_public.html' %}
+{% load static %}
+
+{% block content %}
+
+<style> 
+    [x-cloak] { display: none !important; } 
+    /* Animación suave para los botones */
+    .btn-transition { transition: all 0.2s ease-in-out; }
+    .btn-transition:active { transform: scale(0.95); }
+</style>
+
+<script>
+    // Evitar que HTMX duplique los eventos si el usuario navega varias veces al home
+    if (!window.hasHomeHtmxListener) {
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.successful && evt.detail.requestConfig.path.includes('/api/preguntas/enviar/')) {
+                let formData = new FormData(evt.detail.elt);
+                let tipo = formData.get('tipo');
+                let evtId = formData.get('evento_id');
+                
+                let textarea = evt.detail.elt.querySelector('textarea');
+                if(textarea) textarea.value = '';
+                
+                window.dispatchEvent(new CustomEvent('pregunta-enviada', { detail: { id: evtId, tipo: tipo } }));
+            }
+        });
+        window.hasHomeHtmxListener = true;
+    }
+
+    function todayEventsLogic() {
+        return {
+            todaysEvents: [],
+            loading: true,
+            showSelectionModal: false,
+            showDetailModal: false,
+            showQuestions: false, 
+            selectedEvent: { preguntas_count: 0, aportes_count: 0, pregunta_del_coordinador: '' },
+            selectedBadge: {},
+            selectedStatus: null, 
+
+            async init() {
+                try {
+                    this.loading = true;
+                    const now = new Date();
+                    // El timestamp evita que el navegador guarde la respuesta en caché
+                    const response = await fetch('/api/eventos/?empresa_id=' + '{{ id_empresa|default:0 }}' + '&_=' + new Date().getTime());
+                    const allEvents = await response.json();
+
+                    this.todaysEvents = allEvents.filter(ev => {
+                        if (!ev.start) return false;
+                        const eventDate = new Date(ev.start);
+                        return eventDate.getDate() === now.getDate() &&
+                               eventDate.getMonth() === now.getMonth() &&
+                               eventDate.getFullYear() === now.getFullYear();
+                    });
+                } catch (error) { console.error("Error cargando eventos:", error); } 
+                finally { this.loading = false; }
+            },
+
+            handleTodayClick() {
+                if (this.todaysEvents.length === 1) {
+                    this.selectEvent(this.todaysEvents[0]);
+                } else {
+                    this.showSelectionModal = true;
+                }
+            },
+
+            selectEvent(event) {
+                this.selectedEvent = event;
+                this.selectedEvent.description = event.description || event.extendedProps?.description || '';
+                this.selectedEvent.lugar = event.lugar || event.extendedProps?.lugar || '';
+                
+                let p_coord = event.pregunta_del_coordinador || event.extendedProps?.pregunta_del_coordinador;
+                if (!p_coord || p_coord === "null" || p_coord.trim() === "") p_coord = 'El expositor aun no ha hecho ninguna pregunta';
+                
+                this.selectedEvent.pregunta_del_coordinador = p_coord;
+                this.selectedEvent.preguntas_count = parseInt(event.preguntas_count || event.extendedProps?.preguntas_count) || 0;
+                this.selectedEvent.aportes_count = parseInt(event.aportes_count || event.extendedProps?.aportes_count) || 0;
+                
+                this.selectedStatus = event.user_response || event.extendedProps?.user_response || null;
+                this.showQuestions = false; 
+
+                const props = event.extendedProps || event;
+                if (props.carrera_id) { this.selectedBadge = { text: 'Nivel: CARRERA', colorClass: 'bg-cyan-100 text-cyan-800 ring-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-400' }; } 
+                else if (props.departamento_id) { this.selectedBadge = { text: 'Nivel: DEPARTAMENTO', colorClass: 'bg-yellow-100 text-yellow-800 ring-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-400' }; } 
+                else if (props.facultad_id) { this.selectedBadge = { text: 'Nivel: FACULTAD', colorClass: 'bg-orange-100 text-orange-800 ring-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400' }; } 
+                else { this.selectedBadge = { text: 'Nivel: UNIVERSIDAD', colorClass: 'bg-rose-100 text-rose-800 ring-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400' }; }
+
+                this.showSelectionModal = false;
+                this.showDetailModal = true;
+            },
+
+            actualizarContadorIndex(eventoId, tipo) {
+                let prop = tipo === 'expositor' ? 'preguntas_count' : 'aportes_count';
+                let idx = this.todaysEvents.findIndex(e => e.id == eventoId);
+                
+                if (idx > -1) {
+                    let prevVal = parseInt(this.todaysEvents[idx][prop] || this.todaysEvents[idx].extendedProps?.[prop]) || 0;
+                    this.todaysEvents[idx][prop] = prevVal + 1;
+                    if(this.todaysEvents[idx].extendedProps) {
+                        this.todaysEvents[idx].extendedProps[prop] = prevVal + 1;
+                    }
+                }
+                
+                if (this.selectedEvent && this.selectedEvent.id == eventoId) {
+                    this.selectedEvent[prop] = (parseInt(this.selectedEvent[prop]) || 0) + 1;
+                }
+            },
+
+            async responder(eventoId, accion) {
+                try {
+                    const url = `/responder-invitacion-ajax/${eventoId}/${accion}/`;
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        if (accion === 'confirmar') this.selectedStatus = 'CONFIRMADO';
+                        if (accion === 'rechazar') this.selectedStatus = 'RECHAZADO';
+                    }
+                } catch (e) {
+                    console.error("Error al responder:", e);
+                }
+            },
+
+            formatTime(isoString) {
+                if(!isoString) return '';
+                const date = new Date(isoString);
+                return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            },
+
+            formatFullDate(isoString) {
+                if(!isoString) return '';
+                const date = new Date(isoString);
+                return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute:'2-digit' });
+            }
+        }
+    }
+</script>
+
+<div x-data="todayEventsLogic()" x-init="init()" @pregunta-enviada.window="actualizarContadorIndex($event.detail.id, $event.detail.tipo)" class="space-y-6">
+
+    <div class="bg-white dark:bg-[#1e293b] p-8 rounded-2xl relative overflow-hidden group border border-gray-200 dark:border-white/10 shadow-lg transition-colors">
+        <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="max-w-xl">
+                
+                <div class="flex items-center gap-2 mb-3 h-6">
+                    <span x-show="!loading && todaysEvents.length > 0" x-cloak x-transition 
+                          class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span x-text="todaysEvents.length + (todaysEvents.length === 1 ? ' Evento Hoy' : ' Eventos Hoy')"></span>
+                    </span>
+                </div>
+
+                <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Conoce Nuestro Calendario</h3>
+                <p class="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
+                    Accede a la programación oficial de la facultad: fechas de exámenes, ferias laborales, charlas magistrales y eventos de networking exclusivos.
+                </p>
+
+                <div class="flex flex-wrap gap-3">
+                    <a href="{% url 'ver_calendario' %}" class="inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primaryHover text-white rounded-lg text-sm font-semibold transition shadow-md shadow-primary/20">
+                        Ir al Calendario <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                    </a>
+
+                    <button type="button" 
+                            x-show="!loading"
+                            x-transition
+                            @click="handleTodayClick()"
+                            class="inline-flex items-center px-5 py-2.5 bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-600 text-slate-700 dark:text-white hover:text-primary dark:hover:text-primary hover:border-primary dark:hover:border-primary rounded-lg text-sm font-semibold transition shadow-sm">
+                        <i class="fa-regular fa-calendar-check mr-2"></i>
+                        Evento de hoy
+                    </button>
+                </div>
+            </div>
+            <div class="hidden md:block opacity-5 dark:opacity-10">
+                <i class="fa-solid fa-calendar-days text-8xl text-slate-900 dark:text-white"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-gray-200 dark:border-white/10 hover:border-primary/30 dark:hover:border-slate-700 transition group shadow-md">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Próximo Evento</p>
+                    <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1 group-hover:text-primary transition">Feria Laboral 2026</h4>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 flex items-center justify-center text-slate-400">
+                    <i class="fa-solid fa-briefcase"></i>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Conecta con las empresas líderes en ingeniería y gestión tecnológica.</p>
+            <a href="{% url 'ver_calendario' %}" class="text-xs font-bold text-primary hover:text-primaryHover uppercase tracking-wide transition border-b border-transparent hover:border-primary pb-0.5">Ver detalles</a>
+        </div>
+
+        <div class="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-gray-200 dark:border-white/10 hover:border-primary/30 dark:hover:border-slate-700 transition group shadow-md">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <p class="text-[10px] font-bold text-primary uppercase tracking-widest">Estado CV</p>
+                    <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1">Pendiente</h4>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center text-primary">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Mantén tu currículum actualizado para participar en procesos de selección automática.</p>
+            <a href="{% url 'subir_cv' %}" class="text-xs font-bold text-primary hover:text-primaryHover uppercase tracking-wide transition border-b border-transparent hover:border-primary pb-0.5">Subir PDF</a>
+        </div>
+
+        <div class="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-gray-200 dark:border-white/10 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 transition group shadow-md">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Reclutamiento</p>
+                    <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1 group-hover:text-emerald-600 transition">Mis Ofertas</h4>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Publica ofertas y utiliza nuestra IA para encontrar el talento ideal automáticamente.</p>
+            <a href="{% url 'mis_ofertas' %}" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 uppercase tracking-wide transition border-b border-transparent hover:border-emerald-500 pb-0.5">Crear Publicación</a>
+        </div>
+
+        <div class="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-gray-200 dark:border-white/10 hover:border-purple-500/30 dark:hover:border-purple-500/30 transition group shadow-md">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <p class="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Bolsa de Trabajo</p>
+                    <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1 group-hover:text-purple-600 transition">Mis Oportunidades</h4>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Descubre ofertas laborales seleccionadas por IA que hacen match con tu CV.</p>
+            <a href="{% url 'mis_oportunidades' %}" class="text-xs font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 uppercase tracking-wide transition border-b border-transparent hover:border-purple-500 pb-0.5">Ver Coincidencias</a>
+        </div>
+    </div>
+
+    <div x-show="showSelectionModal" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity" @click="showSelectionModal = false"></div>
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#1e293b] text-left shadow-xl transition-all sm:w-full sm:max-w-md border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Eventos de Hoy</h3>
+                    <button @click="showSelectionModal = false" class="text-gray-400 hover:text-primary"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-6">
+                    <template x-if="todaysEvents.length === 0">
+                        <div class="flex flex-col items-center justify-center py-6 text-slate-500 dark:text-slate-400">
+                            <i class="fa-regular fa-calendar-xmark text-5xl mb-4 opacity-50"></i>
+                            <p class="text-sm font-medium text-center">Hoy no hay eventos programados en el calendario.</p>
+                        </div>
+                    </template>
+
+                    <template x-if="todaysEvents.length > 0">
+                        <div class="space-y-3">
+                            <template x-for="ev in todaysEvents" :key="ev.id">
+                                <button @click="selectEvent(ev)" class="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-slate-50 dark:hover:bg-gray-700/50 transition group text-left">
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 dark:text-white group-hover:text-primary transition" x-text="ev.title"></h4>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                            <i class="fa-regular fa-clock mr-1"></i> <span x-text="formatTime(ev.start)"></span>
+                                        </p>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-primary"></i>
+                                </button>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showDetailModal" style="display: none;" class="fixed inset-0 z-[110] overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity" @click="showDetailModal = false"></div>
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
+                
+                <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-rose-50 dark:bg-gray-800/50 flex justify-between items-start transition-colors">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary text-white shadow-md">
+                            <i class="fa-regular fa-calendar-check text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white leading-6" x-text="selectedEvent.title"></h3>
+                            <p x-show="!showQuestions" class="text-xs text-slate-500 mt-1">Detalles del evento</p>
+                            <p x-show="showQuestions" class="text-xs text-emerald-600 font-bold mt-1">Módulo de Preguntas</p>
+                        </div>
+                    </div>
+                    <button @click="showDetailModal = false" class="text-gray-400 hover:text-primary transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+
+                <div x-show="!showQuestions" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                    <div class="px-6 py-6 space-y-6">
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset shadow-sm" :class="selectedBadge.colorClass" x-text="selectedBadge.text"></span>
+                            <span class="inline-flex items-center rounded-md bg-white dark:bg-gray-700/50 px-2 py-1 text-xs font-medium text-slate-600 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600/20" x-show="selectedEvent.lugar"><i class="fa-solid fa-location-dot mr-1 text-primary"></i> <span x-text="selectedEvent.lugar"></span></span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-white dark:bg-white/5 p-3 rounded-lg border border-gray-100 dark:border-white/5"><strong class="text-slate-400 dark:text-gray-500 block text-[10px] uppercase tracking-wide mb-1">Inicio</strong><div class="flex items-center gap-2 text-slate-800 dark:text-white font-medium"><i class="fa-regular fa-clock text-primary"></i><span x-text="formatFullDate(selectedEvent.start)"></span></div></div>
+                            <div class="bg-white dark:bg-white/5 p-3 rounded-lg border border-gray-100 dark:border-white/5"><strong class="text-slate-400 dark:text-gray-500 block text-[10px] uppercase tracking-wide mb-1">Término</strong><div class="flex items-center gap-2 text-slate-800 dark:text-white font-medium"><i class="fa-solid fa-flag-checkered text-primary"></i><span x-text="formatFullDate(selectedEvent.end)"></span></div></div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 text-slate-700 dark:text-gray-300 leading-relaxed text-sm"><p x-text="selectedEvent.description || 'No hay descripción detallada para este evento.'"></p></div>
+                    </div>
+                </div>
+
+                <div x-show="showQuestions" style="display: none;" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                    <div class="px-6 py-6 bg-slate-50 dark:bg-[#0f172a]">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            
+                            <div class="bg-white dark:bg-[#1e293b] p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                                <div class="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400 font-bold">
+                                    <i class="fa-regular fa-pen-to-square"></i><h3>Pregunta al expositor</h3>
+                                </div>
+                                <form hx-post="/api/preguntas/enviar/" hx-swap="none">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="evento_id" :value="selectedEvent.id">
+                                    <input type="hidden" name="tipo" value="expositor">
+                                    <textarea name="texto" rows="4" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 resize-none transition" placeholder="Escribe tu pregunta..."></textarea>
+                                    <button type="submit" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg shadow-emerald-500/20 transition transform hover:-translate-y-0.5">Enviar</button>
+                                </form>
+                            </div>
+
+                            <div class="bg-white dark:bg-[#1e293b] p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+                                <div class="absolute top-0 right-0 p-2 opacity-5 text-emerald-600 pointer-events-none"><i class="fa-solid fa-comments text-6xl"></i></div>
+                                <div class="relative z-10">
+                                    <div class="flex items-center gap-2 mb-2 text-emerald-600 dark:text-emerald-400 font-bold">
+                                        <i class="fa-solid fa-reply"></i> <h3>Responde al expositor</h3>
+                                    </div>
+                                    <div class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-r-lg">
+                                        <p class="text-sm font-bold text-slate-700 dark:text-slate-200 italic">
+                                            "<span x-text="selectedEvent.pregunta_del_coordinador"></span>"
+                                        </p>
+                                    </div>
+                                    <form hx-post="/api/preguntas/enviar/" hx-swap="none">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="evento_id" :value="selectedEvent.id">
+                                        <input type="hidden" name="tipo" value="publico">
+                                        <textarea name="texto" rows="2" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 resize-none transition" placeholder="Tu respuesta..."></textarea>
+                                        <button type="submit" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg shadow-emerald-500/20 transition transform hover:-translate-y-0.5">Enviar Respuesta</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-t border-gray-100 dark:border-gray-700 transition-colors">
+                    <div class="flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-3">
+                        
+                        <div x-show="!showQuestions" class="flex gap-2 w-full md:w-auto">
+                            <button type="button" 
+                                    @click="responder(selectedEvent.id, 'rechazar')"
+                                    class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 rounded-lg border text-sm font-bold transition btn-transition"
+                                    :class="selectedStatus === 'RECHAZADO' ? 'bg-red-600 border-red-600 text-white shadow-lg' : 'bg-white dark:bg-white/5 border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'">
+                                <i class="fa-solid fa-xmark mr-2"></i> No iré
+                            </button>
+
+                            <button type="button" 
+                                    @click="responder(selectedEvent.id, 'confirmar')"
+                                    class="flex-1 md:flex-none inline-flex justify-center items-center px-4 py-2.5 rounded-lg border text-sm font-bold transition shadow-sm btn-transition"
+                                    :class="(selectedStatus === 'CONFIRMADO' || selectedStatus === 'ENTRADA_ENVIADA') ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-white dark:bg-white/5 border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'">
+                                <i class="fa-solid fa-check mr-2"></i> Asistiré
+                            </button>
+                        </div>
+
+                        <div class="flex gap-2 w-full md:w-auto justify-end">
+                            <button type="button" 
+                                    @click="showQuestions = !showQuestions" 
+                                    class="flex-1 md:flex-none inline-flex justify-center rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm ring-1 ring-inset transition items-center gap-2"
+                                    :class="showQuestions ? 'bg-slate-200 text-slate-700 ring-slate-300 hover:bg-slate-300' : 'bg-white text-emerald-600 ring-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'">
+                                <i class="fa-solid" :class="showQuestions ? 'fa-arrow-left' : 'fa-comments'"></i>
+                                <span x-text="showQuestions ? 'Volver al Evento' : 'Preguntas'"></span>
+                            </button>
+
+                            <button type="button" @click="showDetailModal = false" class="flex-1 md:flex-none inline-flex justify-center rounded-lg bg-white dark:bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-gray-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-white/10 transition">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
