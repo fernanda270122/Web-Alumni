@@ -6534,7 +6534,7 @@ def cargar_excel_usuarios(request):
         usuario_logueado = request.user
         
         # 1. Determinar Rol y Contexto Visual
-        es_coordinador = hasattr(usuario_logueado, 'universidad_coordinador')
+        es_coordinador = getattr(usuario_logueado, 'es_coordinador', False) and usuario_logueado.universidad_coordinador is not None
         
         # Variables por defecto para el template
         base_template = 'base_admin.html'
@@ -6658,6 +6658,7 @@ def cargar_excel_usuarios(request):
                         last_name=last,
                         email=email,
                         telefono=telefono,
+                        carrera=area,
                         password=make_password(clave),
                         is_active=True
                     )
