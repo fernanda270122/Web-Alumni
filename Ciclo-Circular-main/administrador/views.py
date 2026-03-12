@@ -6699,18 +6699,28 @@ class EmailThread(threading.Thread):
 
     def run(self):
         try:
-            # Usamos DEFAULT_FROM_EMAIL que es la variable segura de Brevo
-            send_mail(
-                self.subject,
-                self.message,
-                settings.DEFAULT_FROM_EMAIL, 
-                self.recipient_list,
-                fail_silently=False,
-            )
+            import smtplib
+            import ssl
+            from email.mime.text import MIMEText
+            
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            
+            msg = MIMEText(self.message)
+            msg['Subject'] = self.subject
+            msg['From'] = settings.DEFAULT_FROM_EMAIL
+            msg['To'] = ', '.join(self.recipient_list)
+            
+            with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
+                server.ehlo()
+                server.starttls(context=context)
+                server.login('a4ba9b001@smtp-brevo.com', 'UPLM92nEtK50FTcD')
+                server.sendmail(settings.DEFAULT_FROM_EMAIL, self.recipient_list, msg.as_string())
+            
             print(f"✅ [BREVO] Correo enviado a {self.recipient_list}")
         except Exception as e:
             print(f"❌ [ERROR BREVO] {e}")
-
 
 
 
@@ -7499,13 +7509,19 @@ def admin_mensajeria(request):
 
         if univ_id:
             usuarios = usuarios.filter(carrera__departamento__facultad__universidad_id=univ_id)
-            filtros_texto.append(f"Univ ID: {univ_id}")
+            from app.models import Universidad
+            univ_nombre = Universidad.objects.filter(pk=univ_id).values_list('nombre', flat=True).first()
+            filtros_texto.append(univ_nombre or f"Universidad {univ_id}")
         if fac_id:
             usuarios = usuarios.filter(carrera__departamento__facultad_id=fac_id)
-            filtros_texto.append(f"Fac ID: {fac_id}")
+            from app.models import Facultad
+            fac_nombre = Facultad.objects.filter(pk=fac_id).values_list('nombre', flat=True).first()
+            filtros_texto.append(fac_nombre or f"Facultad {fac_id}")
         if carr_id:
             usuarios = usuarios.filter(carrera_id=carr_id)
-            filtros_texto.append(f"Carr ID: {carr_id}")
+            from app.models import Carrera
+            carr_nombre = Carrera.objects.filter(pk=carr_id).values_list('nombre', flat=True).first()
+            filtros_texto.append(carr_nombre or f"Carrera {carr_id}")
 
         if not usuarios.exists():
             messages.warning(request, "No se encontraron usuarios con los filtros seleccionados.")
@@ -7541,8 +7557,42 @@ def admin_mensajeria(request):
 
                 # 3. Enviamos todos de golpe abriendo una sola conexión
                 if mensajes_email:
-                    connection = get_connection()
-                    enviados = connection.send_messages(mensajes_email)
+                    import smtplib
+                    import ssl
+                    from email.mime.multipart import MIMEMultipart
+                    from email.mime.text import MIMEText
+                    from email.mime.base import MIMEBase
+                    from email import encoders
+
+                    context = ssl.create_default_context()
+                    context.check_hostname = False
+                    context.verify_mode = ssl.CERT_NONE
+
+                    enviados = 0
+                    with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
+                        server.ehlo()
+                        server.starttls(context=context)
+                        server.login('a4ba9b001@smtp-brevo.com', 'UPLM92nEtK50FTcD')
+                        
+                        for usuario in usuarios:
+                            try:
+                                msg = MIMEMultipart()
+                                msg['Subject'] = asunto
+                                msg['From'] = settings.DEFAULT_FROM_EMAIL
+                                msg['To'] = usuario.email
+                                msg.attach(MIMEText(cuerpo, 'plain'))
+                                
+                                if adjunto_contenido:
+                                    part = MIMEBase('application', 'octet-stream')
+                                    part.set_payload(adjunto_contenido)
+                                    encoders.encode_base64(part)
+                                    part.add_header('Content-Disposition', f'attachment; filename="{adjunto_nombre}"')
+                                    msg.attach(part)
+                                
+                                server.sendmail(settings.DEFAULT_FROM_EMAIL, usuario.email, msg.as_string())
+                                enviados += 1
+                            except Exception as e:
+                                print(f"Error enviando a {usuario.email}: {e}")
                     
                     # 4. Guardamos el Log en la Base de Datos
                     LogCorreo.objects.create(
@@ -7591,3 +7641,21 @@ def instituciones_coordinadores(request):
     return render(request, 'admin_usuarios/instituciones_coordinadores.html', {
         'data': data
     })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def eliminar_log_correo(request, log_id):
+    from app.models import LogCorreo
+    log = get_object_or_404(LogCorreo, pk=log_id)
+    log.delete()
+    messages.success(request, "Registro eliminado.")
+    return redirect('admin_mensajeria')
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def eliminar_todos_logs(request):
+    from app.models import LogCorreo
+    LogCorreo.objects.all().delete()
+    messages.success(request, "Historial eliminado completamente.")
+    return redirect('admin_mensajeria')

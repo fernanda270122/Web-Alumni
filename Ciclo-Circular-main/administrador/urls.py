@@ -26,7 +26,7 @@ from .views import (
     resetear_clave_coordinacion, procesamiento_cvs, procesamiento_ofrezco_necesito, cargar_excel_usuarios,
     # Funciones de eventos (Ahora sí están en views.py)
     gestionar_asistencia, reporte_confirmados, descargar_pdf_confirmados, enviar_recordatorio_pendientes, 
-    instituciones_coordinadores
+    instituciones_coordinadores, eliminar_log_correo, eliminar_todos_logs
 )
 
 urlpatterns = [
@@ -55,6 +55,8 @@ urlpatterns = [
     path('usuarios/cv/descargar/<int:cv_id>/', descargar_cv, name='descargar_cv'),
     path("administrador/cargar_excel/", cargar_excel_usuarios, name="cargar_excel_usuarios"),
     path("instituciones/coordinadores/", instituciones_coordinadores, name="instituciones_coordinadores"),
+    path("mensajeria/eliminar/<int:log_id>/", eliminar_log_correo, name="eliminar_log_correo"),
+    path("mensajeria/eliminar-todo/", eliminar_todos_logs, name="eliminar_todos_logs"),
     
     # Notificaciones
     path("notificaciones/", notificaciones, name="notificaciones"),

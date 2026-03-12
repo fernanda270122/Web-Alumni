@@ -8,6 +8,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 import mimetypes
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -177,14 +179,18 @@ IMPORT_EXPORT_USE_TRANSACTIONS = True
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # --- CONFIGURACIÓN DE EMAIL (BREVO API) ---
-EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp-relay.brevo.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_TIMEOUT = 30
+EMAIL_SSL_CERTFILE = None
+EMAIL_SSL_KEYFILE = None
+EMAIL_HOST_USER = 'a4ba9b001@smtp-brevo.com'
+EMAIL_HOST_PASSWORD = 'UPLM92nEtK50FTcD'
+DEFAULT_FROM_EMAIL = 'corp.ici.uchile@gmail.com'
 
-ANYMAIL = {
-    "BREVO_API_KEY": os.getenv('BREVO_API_KEY'),
-}
 
-DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER", "pruebasmohala@gmail.com")
-EMAIL_HOST_USER = DEFAULT_FROM_EMAIL
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -192,11 +198,6 @@ mimetypes.add_type("application/vnd.openxmlformats-officedocument.spreadsheetml.
 
 
 
-# --- CUANDO PASES A PRODUCCIÓN (Ejemplo con Gmail) ---
-ANYMAIL = {
-    # Lee la API Key de tu archivo .env
-    "BREVO_API_KEY": os.getenv('BREVO_API_KEY'),
-}
 
 # ==========================================
 # CONFIGURACIÓN MERCADO PAGO
