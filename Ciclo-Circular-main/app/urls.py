@@ -1,6 +1,12 @@
-from django.urls import path
-from . import views  # Usamos solo esta importación para evitar conflictos
+from django.urls import path, include
+from . import views
 from django.contrib.auth import views as auth_views
+from rest_framework.routers import DefaultRouter
+from .api_views import OfertaViewSet
+
+# Router para la API
+router = DefaultRouter()
+router.register(r'ofertas', OfertaViewSet, basename='oferta')
 urlpatterns = [
     # --- HOME Y DIAGNÓSTICO ---
     path('', views.home, name="home"),
@@ -70,7 +76,6 @@ urlpatterns = [
     path('mi-cv/', views.subir_cv, name='subir_cv'),
     path('perfil/oferta/', views.guardar_oferta, name='guardar_oferta'),
     path('perfil/necesidad/', views.guardar_necesidad, name='guardar_necesidad'),
-    path('perfil/guardar_keywords_cv/', views.guardar_keywords_cv, name='guardar_keywords_cv'),
 
     # 1. Vista de Usuario
     path('bolsa/mis-ofertas/', views.crear_oferta_laboral, name='mis_ofertas'),
@@ -151,4 +156,6 @@ path('gestion-bolsa/', views.admin_ofertas, name='gestion-bolsa'),
     
     path('mi-membresia/', views.mi_membresia, name='mi_membresia'),
     
-    path('pagos/membresia/iniciar/<int:plan_id>/', views.iniciar_pago_membresia, name='iniciar_pago_membresia'),]
+    path('pagos/membresia/iniciar/<int:plan_id>/', views.iniciar_pago_membresia, name='iniciar_pago_membresia'),
+    path('api/bolsa/', include(router.urls)),
+    ]

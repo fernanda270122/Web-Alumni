@@ -147,19 +147,46 @@ class CVUsuario(models.Model):
         return f"CV de {self.usuario.username}"
 
 class Oferta(models.Model):
+    MODALIDAD_CHOICES = [
+        ('presencial', 'Presencial'),
+        ('remoto', 'Remoto'),
+        ('hibrido', 'Híbrido'),
+    ]
+    JORNADA_CHOICES = [
+        ('completa', 'Jornada Completa'),
+        ('parcial', 'Jornada Parcial'),
+        ('practica', 'Práctica'),
+    ]
+
     id_oferta = models.AutoField(primary_key=True)
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    texto_oferta = models.TextField()
+    creado_por = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='ofertas_creadas')
     
-    # Palabras clave existentes
+    titulo = models.CharField(max_length=200)
+    empresa = models.CharField(max_length=200)
+    descripcion = models.TextField()
+    requisitos = models.TextField(blank=True, null=True)
+    ubicacion = models.CharField(max_length=200, blank=True, null=True)
+    modalidad = models.CharField(max_length=20, choices=MODALIDAD_CHOICES, default='presencial')
+    jornada = models.CharField(max_length=20, choices=JORNADA_CHOICES, default='completa')
+    salario = models.CharField(max_length=100, blank=True, null=True)
+    activa = models.BooleanField(default=True)
+    
+    # Palabras clave para matching con CV
     palabra1 = models.CharField(max_length=200, null=True, blank=True)
     palabra2 = models.CharField(max_length=200, null=True, blank=True)
     palabra3 = models.CharField(max_length=200, null=True, blank=True)
     palabra4 = models.CharField(max_length=200, null=True, blank=True)
     palabra5 = models.CharField(max_length=200, null=True, blank=True)
-    # -------------------------------
-    
+
+    # Filtros por institución (opcional)
+    universidad = models.ForeignKey(Universidad, on_delete=models.SET_NULL, null=True, blank=True)
+    carrera = models.ForeignKey(Carrera, on_delete=models.SET_NULL, null=True, blank=True)
+
     creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.titulo} - {self.empresa}"
 
 class Necesidad(models.Model):
     id_necesidad = models.AutoField(primary_key=True)

@@ -57,7 +57,7 @@ urlpatterns = [
     path("instituciones/coordinadores/", instituciones_coordinadores, name="instituciones_coordinadores"),
     path("mensajeria/eliminar/<int:log_id>/", eliminar_log_correo, name="eliminar_log_correo"),
     path("mensajeria/eliminar-todo/", eliminar_todos_logs, name="eliminar_todos_logs"),
-    
+    path('usuarios/<int:user_id>/agregar-cv/', views.agregar_cv, name='agregar_cv'),
     # Notificaciones
     path("notificaciones/", notificaciones, name="notificaciones"),
     path("notificaciones/opciones/", menu_notificaciones, name="menu_notificaciones"),

@@ -5584,6 +5584,28 @@ def ver_cv(request, user_id):
         'palabras': palabras,
     })
 
+def agregar_cv(request, user_id):
+    usuario = get_object_or_404(Usuario, id=user_id)
+
+    if request.method == "POST":
+        archivo = request.FILES.get("cv")
+
+        if archivo:
+            archivo_bytes = archivo.read()
+            archivo_base64 = base64.b64encode(archivo_bytes).decode("utf-8")
+
+            CVUsuario.objects.create(
+                usuario=usuario,
+                nombre_archivo=archivo.name,
+                archivo=archivo_base64
+            )
+
+            return redirect("ver_cv", user_id=usuario.id)
+
+    return render(request, "admin_usuarios/agregar_cv.html", {
+        "usuario": usuario
+    })
+    
 def descargar_cv(request, cv_id):
     cv = get_object_or_404(CVUsuario, id=cv_id)
     # Convertir Base64 a bytes si está almacenado así

@@ -2333,38 +2333,31 @@ def editar_oferta(request, oferta_id):
         oferta = get_object_or_404(Oferta, pk=oferta_id)
         
         # 2. Seguridad: Permisos
-        if request.user != oferta.usuario and not request.user.is_staff:
+        if request.user != oferta.creado_por and not request.user.is_staff:
             messages.error(request, "No tienes permiso para editar esta oferta.")
             return redirect('mis_ofertas')
 
         if request.method == 'POST':
-            nuevo_texto = request.POST.get('texto_oferta')
-            if nuevo_texto:
-                oferta.texto_oferta = nuevo_texto
-
-                # 3. Regenerar keywords (Protegido)
-                try:
-                    if '_obtener_keywords_gemini' in globals():
-                        kw = _obtener_keywords_gemini(nuevo_texto, 5)
-                        
-                        # ASIGNACIÓN SEGURA: Si no hay keyword, pone None (vacío)
-                        # Esto evita que ponga "General" o falle si hay pocas palabras
-                        oferta.palabra1 = kw[0] if len(kw) > 0 else None
-                        oferta.palabra2 = kw[1] if len(kw) > 1 else None
-                        oferta.palabra3 = kw[2] if len(kw) > 2 else None
-                        oferta.palabra4 = kw[3] if len(kw) > 3 else None
-                        oferta.palabra5 = kw[4] if len(kw) > 4 else None
-                except Exception as e:
-                    print(f"⚠️ Alerta IA: {e}")
-                    # No hacemos nada, se conservan los tags anteriores o se queda sin tags
-                
-                oferta.save()
-                messages.success(request, "Oferta actualizada correctamente.")
-                
-                # 4. REDIRECCIÓN CORRECTA
-                if request.user.is_staff:
-                    return redirect('gestion-bolsa')
-                return redirect('mis_ofertas')
+            oferta.titulo = request.POST.get('titulo', oferta.titulo)
+            oferta.empresa = request.POST.get('empresa', oferta.empresa)
+            oferta.descripcion = request.POST.get('descripcion', oferta.descripcion)
+            oferta.requisitos = request.POST.get('requisitos', oferta.requisitos)
+            oferta.ubicacion = request.POST.get('ubicacion', oferta.ubicacion)
+            oferta.modalidad = request.POST.get('modalidad', oferta.modalidad)
+            oferta.jornada = request.POST.get('jornada', oferta.jornada)
+            oferta.salario = request.POST.get('salario', oferta.salario)
+            oferta.palabra1 = request.POST.get('palabra1', oferta.palabra1)
+            oferta.palabra2 = request.POST.get('palabra2', oferta.palabra2)
+            oferta.palabra3 = request.POST.get('palabra3', oferta.palabra3)
+            oferta.palabra4 = request.POST.get('palabra4', oferta.palabra4)
+            oferta.palabra5 = request.POST.get('palabra5', oferta.palabra5)
+            oferta.activa = request.POST.get('activa') == 'on'
+            oferta.save()
+            messages.success(request, "Oferta actualizada correctamente.")
+            
+            if request.user.is_staff:
+                return redirect('gestion-bolsa')
+            return redirect('mis_ofertas')
 
         # Carga el template (que ahora tiene la lógica dinámica de admin/usuario)
         return render(request, 'bolsa/editar_oferta.html', {'oferta': oferta})
@@ -2385,7 +2378,7 @@ def eliminar_oferta(request, oferta_id):
         oferta = get_object_or_404(Oferta, pk=oferta_id)
         
         # Seguridad
-        if request.user == oferta.usuario or request.user.is_staff:
+        if request.user == oferta.creado_por or request.user.is_staff:
             oferta.delete()
             messages.success(request, "Oferta eliminada correctamente.")
         else:

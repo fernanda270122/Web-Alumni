@@ -43,22 +43,26 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 uppercase">
-                                    {{ oferta.usuario.username|slice:":2" }}
+                                    {{ oferta.creado_por.username|slice:":2" }}
                                 </div>
                                 <span class="font-medium text-slate-900 dark:text-white">
-                                    {{ oferta.usuario.first_name }} {{ oferta.usuario.last_name }}
+                                    {{ oferta.creado_por.first_name }} {{ oferta.creado_por.last_name }}
                                 </span>
                             </div>
-                            <span class="text-xs text-slate-400 block ml-10">{{ oferta.usuario.email }}</span>
+                            <span class="text-xs text-slate-400 block ml-10">{{ oferta.creado_por.email }}</span>
                         </td>
 
                         <td class="px-6 py-4">
-                            <p class="italic text-slate-600 dark:text-slate-300 line-clamp-2 max-w-xs">
-                                "{{ oferta.texto_oferta }}"
+                            <p class="font-bold text-slate-900 dark:text-white">{{ oferta.titulo }}</p>
+                            <p class="text-xs text-slate-500">{{ oferta.empresa }}</p>
+                            <p class="italic text-slate-600 dark:text-slate-300 line-clamp-2 max-w-xs mt-1">
+                                "{{ oferta.descripcion }}"
                             </p>
                             <div class="flex flex-wrap gap-1 mt-2">
                                 {% if oferta.palabra1 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ oferta.palabra1 }}</span>{% endif %}
                                 {% if oferta.palabra2 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ oferta.palabra2 }}</span>{% endif %}
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px]">{{ oferta.get_modalidad_display }}</span>
+                                <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px]">{{ oferta.get_jornada_display }}</span>
                             </div>
                         </td>
 

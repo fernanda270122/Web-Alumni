@@ -105,7 +105,9 @@ class CVUsuarioAdmin(admin.ModelAdmin):
 
 @admin.register(Oferta)
 class OfertaAdmin(admin.ModelAdmin):
-    list_display = ("id_oferta", "usuario", "texto_oferta", "creado")
+    list_display = ("id_oferta", "titulo", "empresa", "creado_por", "modalidad", "jornada", "activa", "creado")
+    list_filter = ("modalidad", "jornada", "activa", "universidad")
+    search_fields = ("titulo", "empresa")
 
 @admin.register(Necesidad)
 class NecesidadAdmin(admin.ModelAdmin):
