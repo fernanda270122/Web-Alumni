@@ -20,15 +20,15 @@
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-600">
-                                {{ item.oferta.usuario.username|slice:":2"|upper }}
+                                {{ item.oferta.creado_por.username|slice:":2"|upper }}
                             </div>
                             
                             <div>
                                 <h4 class="font-bold text-slate-900 dark:text-white text-sm">
-                                    {% if item.oferta.usuario.first_name %}
-                                        {{ item.oferta.usuario.first_name }} {{ item.oferta.usuario.last_name }}
+                                    {% if item.oferta.creado_por.first_name %}
+                                        {{ item.oferta.creado_por.first_name }} {{ item.oferta.creado_por.last_name }}
                                     {% else %}
-                                        {{ item.oferta.usuario.username }}
+                                        {{ item.oferta.creado_por.username }}
                                     {% endif %}
                                 </h4>
                                 <div class="flex items-center gap-2">
@@ -41,9 +41,20 @@
                         </div>
                     </div>
 
-                    <h3 class="text-lg font-medium text-slate-800 dark:text-white italic mb-4">
-                        "{{ item.oferta.texto_oferta }}"
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">
+                        {{ item.oferta.titulo }}
                     </h3>
+                    <p class="text-sm text-slate-500 mb-2">{{ item.oferta.empresa }}</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 italic mb-4">
+                        "{{ item.oferta.descripcion }}"
+                    </p>
+                    <div class="flex gap-2 mb-4">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">{{ item.oferta.get_modalidad_display }}</span>
+                        <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">{{ item.oferta.get_jornada_display }}</span>
+                        {% if item.oferta.salario %}
+                        <span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">{{ item.oferta.salario }}</span>
+                        {% endif %}
+                    </div>
 
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-[10px] font-bold text-slate-400 uppercase mr-2">Tags IA:</span>
@@ -89,7 +100,7 @@
                             </div>
                         </div>
 
-                        <a href="mailto:{{ item.oferta.usuario.email }}" class="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wide border border-emerald-200 rounded px-4 py-2 hover:bg-emerald-50 transition text-center whitespace-nowrap">
+                        <a href="mailto:{{ item.oferta.creado_por.email }}" class="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wide border border-emerald-200 rounded px-4 py-2 hover:bg-emerald-50 transition text-center whitespace-nowrap">
                             Contactar Reclutador <i class="fa-regular fa-envelope ml-1"></i>
                         </a>
                     </div>

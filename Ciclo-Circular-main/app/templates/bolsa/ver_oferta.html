@@ -1,0 +1,87 @@
+{% extends 'base_admin.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 pt-6 pb-12">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">{{ oferta.titulo }}</h2>
+            <p class="text-slate-500 mt-1">{{ oferta.empresa }}</p>
+        </div>
+        <a href="{% url 'gestion-bolsa' %}" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-8 space-y-6">
+
+        <!-- Badges -->
+        <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">{{ oferta.get_modalidad_display }}</span>
+            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">{{ oferta.get_jornada_display }}</span>
+            {% if oferta.activa %}
+            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Activa</span>
+            {% else %}
+            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">Inactiva</span>
+            {% endif %}
+        </div>
+
+        <!-- Descripción -->
+        <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Descripción</p>
+            <p class="text-slate-700 dark:text-slate-300">{{ oferta.descripcion }}</p>
+        </div>
+
+        <!-- Requisitos -->
+        {% if oferta.requisitos %}
+        <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Requisitos</p>
+            <p class="text-slate-700 dark:text-slate-300">{{ oferta.requisitos }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Info -->
+        <div class="grid grid-cols-2 gap-4">
+            {% if oferta.ubicacion %}
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ubicación</p>
+                <p class="text-sm text-slate-700 dark:text-slate-300"><i class="fa-solid fa-location-dot mr-1"></i>{{ oferta.ubicacion }}</p>
+            </div>
+            {% endif %}
+            {% if oferta.salario %}
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Salario</p>
+                <p class="text-sm text-slate-700 dark:text-slate-300"><i class="fa-solid fa-money-bill mr-1"></i>{{ oferta.salario }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Palabras clave -->
+        <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Palabras Clave</p>
+            <div class="flex flex-wrap gap-2">
+                {% if oferta.palabra1 %}<span class="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs">{{ oferta.palabra1 }}</span>{% endif %}
+                {% if oferta.palabra2 %}<span class="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs">{{ oferta.palabra2 }}</span>{% endif %}
+                {% if oferta.palabra3 %}<span class="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs">{{ oferta.palabra3 }}</span>{% endif %}
+                {% if oferta.palabra4 %}<span class="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs">{{ oferta.palabra4 }}</span>{% endif %}
+                {% if oferta.palabra5 %}<span class="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs">{{ oferta.palabra5 }}</span>{% endif %}
+            </div>
+        </div>
+
+        <!-- Publicado por -->
+        <div class="border-t border-slate-100 dark:border-slate-700 pt-4">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Publicado por</p>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600">
+                    {{ oferta.creado_por.username|slice:":2"|upper }}
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-slate-900 dark:text-white">{{ oferta.creado_por.get_full_name }}</p>
+                    <p class="text-xs text-slate-400">{{ oferta.creado_por.email }}</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

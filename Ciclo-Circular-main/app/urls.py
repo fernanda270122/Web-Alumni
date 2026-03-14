@@ -83,7 +83,9 @@ urlpatterns = [
     # 2. Vista de Candidato
     path('bolsa/oportunidades/', views.mis_oportunidades, name='mis_oportunidades'), 
     
-path('gestion-bolsa/', views.admin_ofertas, name='gestion-bolsa'),
+    path('gestion-bolsa/', views.admin_ofertas, name='gestion-bolsa'),
+    path('oferta/eliminar/<int:oferta_id>/', views.eliminar_oferta, name='eliminar_oferta'),
+    path('oferta/ver/<int:oferta_id>/', views.ver_oferta, name='ver_oferta'),
     # 4. CRUD
     path('oferta/editar/<int:oferta_id>/', views.editar_oferta, name='editar_oferta'),
     path('oferta/eliminar/<int:oferta_id>/', views.eliminar_oferta, name='eliminar_oferta'),

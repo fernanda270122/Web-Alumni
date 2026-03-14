@@ -2272,7 +2272,7 @@ def mis_oportunidades(request):
               mi_cv.palabra6, mi_cv.palabra7, mi_cv.palabra8, mi_cv.palabra9, mi_cv.palabra10]
     set_cv = set([str(p).strip().title() for p in raw_cv if p and p not in ['General', 'None', '']])
 
-    todas_ofertas = Oferta.objects.exclude(usuario=request.user).order_by('-creado')
+    todas_ofertas = Oferta.objects.filter(activa=True).exclude(creado_por=request.user).order_by('-creado')
     lista_matches = []
 
     for oferta in todas_ofertas:
@@ -2401,6 +2401,11 @@ def eliminar_oferta(request, oferta_id):
             </div>
         """)
     
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def ver_oferta(request, oferta_id):
+    oferta = get_object_or_404(Oferta, pk=oferta_id)
+    return render(request, 'bolsa/ver_oferta.html', {'oferta': oferta})
 
 def descargar_plantilla(request):
     # Definimos la ruta al archivo Excel dentro de la carpeta static
