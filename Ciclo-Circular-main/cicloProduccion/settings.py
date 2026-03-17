@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 import dj_database_url
 import mimetypes
 import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
+import certifi
+ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

@@ -17,7 +17,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.conf import settings
 from django.http import HttpResponse, Http404
 from time import process_time_ns
-
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 
 import traceback
 # Evitamos que las advertencias llenen los logs de Render
@@ -71,6 +72,29 @@ if API_KEY:
     except Exception as e:
         print(f"Error Configuración Inicial: {e}")
 
+import threading
+from django.core.mail import send_mail
+from django.conf import settings
+
+class EmailThread(threading.Thread):
+    def __init__(self, subject, message, recipient_list):
+        self.subject = subject
+        self.message = message
+        self.recipient_list = recipient_list
+        threading.Thread.__init__(self)
+
+    def run(self):
+        try:
+            send_mail(
+                self.subject,
+                self.message,
+                settings.DEFAULT_FROM_EMAIL,
+                self.recipient_list,
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f"Error enviando correo en hilo: {e}")
+            
 # Create your views here.
 @login_required
 def home(request):
@@ -1198,8 +1222,14 @@ def mi_perfil(request):
         print(f"ERROR CRÍTICO EN MI PERFIL: {e}") # Mira la consola para ver el error real
         messages.error(request, "Ocurrió un error al cargar tu perfil. Intenta nuevamente.")
         return redirect('home')
-    
 
+@login_required
+def mis_matches(request):
+    resultados = obtener_matches_usuario(request.user)
+
+    return render(request, 'mis_matches.html', {
+        'resultados': resultados
+    })
     
 @login_required
 def subir_cv(request):
@@ -2392,13 +2422,14 @@ def admin_necesidades(request):
         """)
 # --- LÓGICA DE EDICIÓN (Sirve para Admin y Usuario) ---
 
+
+@login_required
 @login_required
 def editar_oferta(request, oferta_id):
     try:
-        # 1. Usamos pk para seguridad
         oferta = get_object_or_404(Oferta, pk=oferta_id)
         
-        # 2. Seguridad: Permisos
+        # Permisos
         if request.user != oferta.creado_por and not request.user.is_staff:
             messages.error(request, "No tienes permiso para editar esta oferta.")
             return redirect('mis_ofertas')
@@ -2414,32 +2445,50 @@ def editar_oferta(request, oferta_id):
             oferta.salario = request.POST.get('salario', oferta.salario)
             oferta.activa = request.POST.get('activa') == 'on'
 
-            # Generar palabras clave automáticamente con IA
-            try:
-                texto_para_ia = f"{oferta.titulo} {oferta.descripcion} {oferta.requisitos or ''}"
-                palabras = _obtener_keywords_gemini(texto_para_ia, 5)
-                oferta.palabra1 = palabras[0] if len(palabras) > 0 else None
-                oferta.palabra2 = palabras[1] if len(palabras) > 1 else None
-                oferta.palabra3 = palabras[2] if len(palabras) > 2 else None
-                oferta.palabra4 = palabras[3] if len(palabras) > 3 else None
-                oferta.palabra5 = palabras[4] if len(palabras) > 4 else None
-            except Exception as e:
-                print(f"⚠️ Error IA palabras clave: {e}")
-                # Si falla la IA, usar las palabras manuales
-                oferta.palabra1 = request.POST.get('palabra1', oferta.palabra1)
-                oferta.palabra2 = request.POST.get('palabra2', oferta.palabra2)
-                oferta.palabra3 = request.POST.get('palabra3', oferta.palabra3)
-                oferta.palabra4 = request.POST.get('palabra4', oferta.palabra4)
-                oferta.palabra5 = request.POST.get('palabra5', oferta.palabra5)
-
+            # Guardar primero (rápido, sin IA)
             oferta.save()
+
+            # Fallback inmediato (por si IA falla o demora)
+            oferta.palabra1 = request.POST.get('palabra1', oferta.palabra1)
+            oferta.palabra2 = request.POST.get('palabra2', oferta.palabra2)
+            oferta.palabra3 = request.POST.get('palabra3', oferta.palabra3)
+            oferta.palabra4 = request.POST.get('palabra4', oferta.palabra4)
+            oferta.palabra5 = request.POST.get('palabra5', oferta.palabra5)
+            oferta.save()
+
+            # 🔥 Ejecutar IA en segundo plano (NO bloquea)
+            def generar_keywords_background(oferta_id):
+                try:
+                    oferta_bg = Oferta.objects.get(id=oferta_id)
+                    texto = f"{oferta_bg.titulo} {oferta_bg.descripcion} {oferta_bg.requisitos or ''}"
+
+                    palabras = _obtener_keywords_gemini(texto, 5)
+
+                    if not isinstance(palabras, list):
+                        return
+
+                    oferta_bg.palabra1 = palabras[0] if len(palabras) > 0 else None
+                    oferta_bg.palabra2 = palabras[1] if len(palabras) > 1 else None
+                    oferta_bg.palabra3 = palabras[2] if len(palabras) > 2 else None
+                    oferta_bg.palabra4 = palabras[3] if len(palabras) > 3 else None
+                    oferta_bg.palabra5 = palabras[4] if len(palabras) > 4 else None
+
+                    oferta_bg.save()
+
+                except Exception as e:
+                    print(f"⚠️ Error IA background: {e}")
+
+            threading.Thread(
+                target=generar_keywords_background,
+                args=(oferta.id,)
+            ).start()
+
             messages.success(request, "Oferta actualizada correctamente.")
-            
+
             if request.user.is_staff:
                 return redirect('gestion-bolsa')
             return redirect('mis_ofertas')
 
-        # Carga el template (que ahora tiene la lógica dinámica de admin/usuario)
         return render(request, 'bolsa/editar_oferta.html', {'oferta': oferta})
 
     except Exception as e:
@@ -2586,10 +2635,6 @@ def enviar_pregunta(request):
         return JsonResponse({'status': 'success'})
         
     return JsonResponse({'status': 'error', 'message': 'Método no permitido'})
-
-
-
-
 
 @login_required
 def ver_calendario_view(request):

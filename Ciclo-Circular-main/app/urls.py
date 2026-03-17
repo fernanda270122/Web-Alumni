@@ -83,7 +83,7 @@ urlpatterns = [
     
     # 1. Vista de Usuario
     path('bolsa/mis-ofertas/', views.crear_oferta_laboral, name='mis_ofertas'),
-    
+    path('mis-matches/', views.mis_matches, name='mis_matches'),
     # 2. Vista de Candidato
     path('bolsa/oportunidades/', views.mis_oportunidades, name='mis_oportunidades'), 
     
