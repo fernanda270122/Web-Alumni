@@ -1,0 +1,78 @@
+{% extends 'base_admin.html' %}
+{% block content %}
+<div class="p-6">
+    <div class="bg-white dark:bg-[#1e293b] p-8 rounded-2xl border border-gray-200 dark:border-white/10 shadow-lg">
+        
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Gestión de Necesidades</h2>
+                <p class="text-slate-600 dark:text-slate-400 text-sm">Lo que los usuarios necesitan.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
+                    Total: {{ necesidades|length }}
+                </div>
+                <a href="{% url 'home' %}" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-600 transition shadow-sm text-sm font-medium">
+                    <i class="fa-solid fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-500 dark:text-slate-400">
+                <thead class="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-700 dark:text-slate-200">
+                    <tr>
+                        <th class="px-6 py-3">ID</th>
+                        <th class="px-6 py-3">Usuario</th>
+                        <th class="px-6 py-3">Necesito</th>
+                        <th class="px-6 py-3">Palabras Clave</th>
+                        <th class="px-6 py-3">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for necesidad in necesidades %}
+                    <tr class="bg-white border-b dark:bg-slate-800 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                        <td class="px-6 py-4 font-bold">#{{ necesidad.pk }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 uppercase">
+                                    {{ necesidad.usuario.username|slice:":2" }}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-slate-900 dark:text-white">{{ necesidad.usuario.get_full_name }}</p>
+                                    <p class="text-xs text-slate-400">{{ necesidad.usuario.email }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="italic text-slate-600 dark:text-slate-300 line-clamp-2 max-w-xs">
+                                "{{ necesidad.texto_necesita }}"
+                            </p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-1">
+                                {% if necesidad.palabra1 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ necesidad.palabra1 }}</span>{% endif %}
+                                {% if necesidad.palabra2 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ necesidad.palabra2 }}</span>{% endif %}
+                                {% if necesidad.palabra3 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ necesidad.palabra3 }}</span>{% endif %}
+                                {% if necesidad.palabra4 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ necesidad.palabra4 }}</span>{% endif %}
+                                {% if necesidad.palabra5 %}<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-[10px]">{{ necesidad.palabra5 }}</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">{{ necesidad.creado|date:"d M Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                            <div class="flex flex-col items-center gap-2">
+                                <i class="fa-regular fa-folder-open text-3xl opacity-50"></i>
+                                <p>No hay necesidades registradas.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

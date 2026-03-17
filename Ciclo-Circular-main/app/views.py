@@ -18,6 +18,7 @@ from django.conf import settings
 from django.http import HttpResponse, Http404
 from time import process_time_ns
 
+
 import traceback
 # Evitamos que las advertencias llenen los logs de Render
 warnings.filterwarnings("ignore")
@@ -101,8 +102,9 @@ def home(request):
         }
         return render(request, 'home_admin.html', data)
 
-    # LÓGICA PARA USUARIOS NORMALES
-    return render(request, 'home.html')
+    # LÓGICA PARA USUARIOS NORMALEScv = CVUsuario.objects.filter(usuario=request.user).last()
+    cv = CVUsuario.objects.filter(usuario=request.user).last()
+    return render(request, 'home.html', {'cv': cv})
 
 def autoDiagnostico(request, empresa_id=None): # Recibimos 'empresa_id' desde la URL
 
@@ -1137,7 +1139,7 @@ def mi_perfil(request):
                 qr_base64 = base64.b64encode(cv.linkedin_qr).decode("utf-8")
 
         # Datos adicionales (Manejo de errores por si faltan campos en la BD)
-        ultima_oferta = Oferta.objects.filter(usuario=request.user).last()
+        ultima_oferta = Oferta.objects.filter(creado_por=request.user).last()
         palabras_oferta = []
         if ultima_oferta:
             for i in range(1, 6): # palabra1 a palabra5
@@ -1244,6 +1246,12 @@ def subir_cv(request):
         return redirect("mi_perfil")
         
     return render(request, "mi_perfil/subir_cv.html")
+
+@login_required
+def eliminar_cv(request):
+    CVUsuario.objects.filter(usuario=request.user).delete()
+    messages.success(request, "CV eliminado correctamente.")
+    return redirect('mi_perfil')
 
 @login_required
 def guardar_keywords_cv(request):
@@ -2323,7 +2331,22 @@ def admin_ofertas(request):
         </div>
         """
         return HttpResponse(error_msg)
-    
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def admin_necesidades(request):
+    try:
+        necesidades = Necesidad.objects.all().order_by('-creado')
+        return render(request, 'bolsa/admin_necesidades.html', {'necesidades': necesidades})
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"""
+            <div style='background: #330000; color: #ffcccc; border: 2px solid red; padding: 20px; font-family: monospace;'>
+                <h1 style='color: red;'>ERROR</h1>
+                <h3>{str(e)}</h3>
+                <pre>{traceback.format_exc()}</pre>
+            </div>
+        """)
 # --- LÓGICA DE EDICIÓN (Sirve para Admin y Usuario) ---
 
 @login_required

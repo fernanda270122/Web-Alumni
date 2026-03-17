@@ -2,6 +2,8 @@ from rest_framework import viewsets, permissions
 from rest_framework.authentication import TokenAuthentication
 from .models import Oferta
 from .serializers import OfertaSerializer
+from .models import Necesidad
+from .serializers import NecesidadSerializer
 
 class EsSoloAdmin(permissions.BasePermission):
     """Solo los administradores pueden acceder"""
@@ -26,3 +28,15 @@ class OfertaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Guarda automáticamente quién creó la oferta
         serializer.save(creado_por=self.request.user)
+        
+
+
+class NecesidadViewSet(viewsets.ModelViewSet):
+    queryset = Necesidad.objects.all().order_by('-creado')
+    serializer_class = NecesidadSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [EsSoloAdmin]
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+    def perform_create(self, serializer):
+        serializer.save(usuario=self.request.user)

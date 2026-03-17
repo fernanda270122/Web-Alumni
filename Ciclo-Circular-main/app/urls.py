@@ -2,11 +2,13 @@ from django.urls import path, include
 from . import views
 from django.contrib.auth import views as auth_views
 from rest_framework.routers import DefaultRouter
-from .api_views import OfertaViewSet
+from .api_views import OfertaViewSet, NecesidadViewSet
+
 
 # Router para la API
 router = DefaultRouter()
 router.register(r'ofertas', OfertaViewSet, basename='oferta')
+router.register(r'necesidades', NecesidadViewSet, basename='necesidad')
 urlpatterns = [
     # --- HOME Y DIAGNÓSTICO ---
     path('', views.home, name="home"),
@@ -76,7 +78,9 @@ urlpatterns = [
     path('mi-cv/', views.subir_cv, name='subir_cv'),
     path('perfil/oferta/', views.guardar_oferta, name='guardar_oferta'),
     path('perfil/necesidad/', views.guardar_necesidad, name='guardar_necesidad'),
-
+    path('perfil/guardar_keywords_cv/', views.guardar_keywords_cv, name='guardar_keywords_cv'),
+    path('perfil/eliminar-cv/', views.eliminar_cv, name='eliminar_cv'),
+    
     # 1. Vista de Usuario
     path('bolsa/mis-ofertas/', views.crear_oferta_laboral, name='mis_ofertas'),
     
@@ -84,6 +88,7 @@ urlpatterns = [
     path('bolsa/oportunidades/', views.mis_oportunidades, name='mis_oportunidades'), 
     
     path('gestion-bolsa/', views.admin_ofertas, name='gestion-bolsa'),
+    path('gestion-necesidades/', views.admin_necesidades, name='gestion-necesidades'),
     path('oferta/eliminar/<int:oferta_id>/', views.eliminar_oferta, name='eliminar_oferta'),
     path('oferta/ver/<int:oferta_id>/', views.ver_oferta, name='ver_oferta'),
     # 4. CRUD

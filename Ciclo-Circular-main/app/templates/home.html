@@ -198,14 +198,23 @@
             <div class="flex justify-between items-start mb-4">
                 <div>
                     <p class="text-[10px] font-bold text-primary uppercase tracking-widest">Estado CV</p>
-                    <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1">Pendiente</h4>
+                    {% if cv and cv.nombre_archivo %}
+                    <h4 class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">✓ Cargado</h4>
+                    {% else %}
+                    <h4 class="text-lg font-bold text-amber-500 mt-1">⚠ Pendiente</h4>
+                    {% endif %}
                 </div>
                 <div class="w-10 h-10 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center text-primary">
                     <i class="fa-solid fa-file-pdf"></i>
                 </div>
             </div>
+            {% if cv and cv.nombre_archivo %}
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Tu CV está listo: <span class="font-bold text-slate-700 dark:text-slate-300">{{ cv.nombre_archivo }}</span></p>
+            <a href="{% url 'mi_perfil' %}" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wide transition border-b border-transparent hover:border-emerald-500 pb-0.5">Ver mi perfil</a>
+            {% else %}
             <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Mantén tu currículum actualizado para participar en procesos de selección automática.</p>
             <a href="{% url 'subir_cv' %}" class="text-xs font-bold text-primary hover:text-primaryHover uppercase tracking-wide transition border-b border-transparent hover:border-primary pb-0.5">Subir PDF</a>
+            {% endif %}
         </div>
 
         <div class="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-gray-200 dark:border-white/10 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 transition group shadow-md">

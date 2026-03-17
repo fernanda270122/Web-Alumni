@@ -167,23 +167,54 @@
                         <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fa-solid fa-file-pdf text-red-500 text-xl"></i> Mi Currículum
                         </h3>
-                        <a href="{% url 'subir_cv' %}" class="text-xs font-bold text-primary hover:underline">Ver detalle CV</a>
                     </div>
 
-                    <form method="POST" enctype="multipart/form-data">
+                    <!-- Estado del CV -->
+                    {% if cv and cv.nombre_archivo %}
+                    <div class="mb-4 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-file-pdf text-red-500 text-2xl"></i>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase">CV Cargado</p>
+                                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ cv.nombre_archivo }}</p>
+                            </div>
+                        </div>
+                        <a href="{% url 'eliminar_cv' %}" 
+                           onclick="return confirm('¿Eliminar tu CV?');"
+                           class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-100 hover:bg-red-200 text-red-500 transition">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                        <p class="text-xs font-bold text-amber-600 uppercase">⚠ Sin CV cargado</p>
+                        <p class="text-xs text-slate-500 mt-1">Sube tu CV para participar en procesos de selección.</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Mensajes -->
+                    {% for message in messages %}
+                    <div class="mb-4 p-3 rounded-lg {% if message.tags == 'success' %}bg-emerald-100 text-emerald-700{% else %}bg-red-100 text-red-700{% endif %} text-xs font-bold">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+
+                    <form method="POST" action="{% url 'subir_cv' %}" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-primary transition group bg-slate-50 dark:bg-transparent mb-4">
                             <input type="file" name="archivo" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" @change="fileName = $event.target.files[0].name">
                             <div x-show="!fileName">
                                 <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 group-hover:text-primary mb-2 transition"></i>
-                                <p class="text-xs text-slate-500 font-bold uppercase">Click para actualizar archivo</p>
+                                <p class="text-xs text-slate-500 font-bold uppercase">Click para subir CV (PDF o Word)</p>
                             </div>
                             <div x-show="fileName" style="display: none;">
                                 <i class="fa-solid fa-check-circle text-2xl text-green-500 mb-2"></i>
                                 <p class="text-xs text-slate-800 dark:text-white font-bold break-all" x-text="fileName"></p>
                             </div>
                         </div>
-                        <button type="submit" class="w-full py-2.5 rounded-lg bg-primary hover:bg-primaryHover text-white font-bold text-xs uppercase tracking-wider transition shadow-md">Subir Nuevo Archivo</button>
+                        <button type="submit" class="w-full py-2.5 rounded-lg bg-primary hover:bg-primaryHover text-white font-bold text-xs uppercase tracking-wider transition shadow-md">
+                            {% if cv and cv.nombre_archivo %}Actualizar CV{% else %}Subir CV{% endif %}
+                        </button>
                     </form>
 
                     {% if cv %}

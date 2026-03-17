@@ -37,7 +37,7 @@
                 <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
 
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST" action="{% url 'subir_cv' %}" enctype="multipart/form-data">
                     {% csrf_token %}
 
                     <label class="fw-bold">Seleccionar archivo:</label>
