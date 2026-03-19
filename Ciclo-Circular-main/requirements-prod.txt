@@ -16,7 +16,7 @@ django-allauth
 PyJWT
 cryptography
 openpyxl
-xhtml2pdf
+xhtml2pdf==0.2.11
 python-Levenshtein
 rapidfuzz
 pillow

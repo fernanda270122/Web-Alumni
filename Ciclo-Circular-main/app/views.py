@@ -1424,21 +1424,17 @@ def guardar_necesidad(request):
         
         if not texto:
             messages.error(request, "El texto no puede estar vacío.")
-            return redirect("mi_perfil")
+            return redirect("pagina_networking")
 
         # 1. Llamamos a la IA
         palabras = _obtener_keywords_gemini(texto, 5)
 
         try:
-            # CORRECCIÓN CRÍTICA:
-            necesidad = Necesidad.objects.filter(usuario=request.user).last()
-            
-            if not necesidad:
-                necesidad = Necesidad(usuario=request.user)
-
+            # Siempre crea una nueva necesidad
+            necesidad = Necesidad(usuario=request.user)
             necesidad.texto_necesita = texto
             for i in range(5): 
-                val = palabras[i] if i < len(palabras) else "General"
+                val = palabras[i] if i < len(palabras) else None
                 setattr(necesidad, f"palabra{i+1}", val)
             
             necesidad.save()
@@ -1452,7 +1448,7 @@ def guardar_necesidad(request):
             print(f"🔥 Error al guardar Necesidad: {e}")
             messages.error(request, "Hubo un problema guardando los datos.")
             
-    return redirect("mi_perfil")
+    return redirect("pagina_networking")
 
 @login_required
 def seleccion_empresa_calendario(request):
@@ -2439,19 +2435,27 @@ def vista_networking(request):
     ultima_necesidad = necesidades_user.first()
 
     # Construir listas de palabras para mostrar en HTML
-    palabras_oferta = [getattr(ultima_oferta, f'palabra{i}', None) for i in range(1,6) if getattr(ultima_oferta, f'palabra{i}', None)]
-    palabras_necesidad = [getattr(ultima_necesidad, f'palabra{i}', None) for i in range(1,6) if getattr(ultima_necesidad, f'palabra{i}', None)]
+    palabras_oferta = []
+    if ultima_oferta:
+        palabras_oferta = [getattr(ultima_oferta, f'palabra{i}', None) for i in range(1,6) if getattr(ultima_oferta, f'palabra{i}', None)]
+    
+    palabras_necesidad = []
+    if ultima_necesidad:
+        palabras_necesidad = [getattr(ultima_necesidad, f'palabra{i}', None) for i in range(1,6) if getattr(ultima_necesidad, f'palabra{i}', None)]
 
     contexto = {
-        'ultima_oferta': ultima_oferta,
-        'palabras_oferta': palabras_oferta,
-        'ultima_necesidad': ultima_necesidad,
-        'palabras_necesidad': palabras_necesidad,
-        'historial_ofertas': ofertas_user,
-        'historial_necesidades': necesidades_user,
-    }
+            'ultima_oferta': ultima_oferta,
+            'palabras_oferta': palabras_oferta,
+            'ultima_necesidad': ultima_necesidad,
+            'palabras_necesidad': palabras_necesidad,
+            'historial_ofertas': ofertas_user,
+            'historial_necesidades': necesidades_user,
+        }
 
+    print(f"DEBUG: ultima_oferta={ultima_oferta}, ultima_necesidad={ultima_necesidad}")
     return render(request, 'networking.html', contexto)
+       
+
 
 @login_required
 def guardar_oferta(request):
@@ -2568,7 +2572,7 @@ def editar_networking_oferta(request, oferta_id):
                 except Exception as e:
                     print(f"⚠️ Error IA background Networking: {e}")
 
-            threading.Thread(target=generar_keywords_background, args=(oferta.id,)).start()
+            threading.Thread(target=generar_keywords_background, args=(oferta.id_oferta,)).start()
 
             messages.success(request, "Oferta de networking actualizada correctamente.")
             return redirect('pagina_networking')
@@ -2620,6 +2624,43 @@ def eliminar_networking_oferta(request, oferta_id):
                 <a href="/ofrezco-necesito/" style="color: white; font-weight: bold;">Volver atrás</a>
             </div>
         """)
+@login_required
+def editar_networking_necesidad(request, necesidad_id):
+    necesidad = get_object_or_404(Necesidad, pk=necesidad_id)
+    
+    if request.user != necesidad.usuario and not request.user.is_staff:
+        messages.error(request, "No tienes permiso para editar esta necesidad.")
+        return redirect('pagina_networking')
+
+    if request.method == 'POST':
+        nuevo_texto = request.POST.get('texto_necesita')
+        if nuevo_texto:
+            necesidad.texto_necesita = nuevo_texto
+            try:
+                palabras = _obtener_keywords_gemini(nuevo_texto, 5)
+                for i in range(5):
+                    setattr(necesidad, f'palabra{i+1}', palabras[i] if i < len(palabras) else None)
+            except Exception as e:
+                print(f"⚠️ Error IA: {e}")
+            necesidad.save()
+            messages.success(request, "Necesidad actualizada correctamente.")
+            return redirect('pagina_networking')
+
+    return render(request, 'mi_perfil/editar_necesidad_networking.html', {'necesidad': necesidad})
+
+
+@login_required
+def eliminar_networking_necesidad(request, necesidad_id):
+    necesidad = get_object_or_404(Necesidad, pk=necesidad_id)
+    
+    if request.user == necesidad.usuario or request.user.is_staff:
+        necesidad.delete()
+        messages.success(request, "Necesidad eliminada correctamente.")
+    else:
+        messages.error(request, "No tienes permiso para eliminar esta necesidad.")
+    
+    return redirect('pagina_networking')
+
 # --- LÓGICA DE EDICIÓN (Sirve para Admin y Usuario) ---
 #------BOLSA DE EMPLEO -------
 @login_required
@@ -2727,9 +2768,22 @@ def eliminar_oferta(request, oferta_id):
                 <pre>{traceback.format_exc()}</pre>
             </div>
         """)
+@login_required
+def ver_necesidad(request, necesidad_id):
+    necesidad = get_object_or_404(Necesidad, pk=necesidad_id)
+    
+    if request.user != necesidad.usuario and not request.user.is_staff:
+        messages.error(request, "No tienes permiso para ver esta necesidad.")
+        return redirect('pagina_networking')
+    
+    palabras = [getattr(necesidad, f'palabra{i}', None) for i in range(1,6) if getattr(necesidad, f'palabra{i}', None)]
+    
+    return render(request, 'mi_perfil/ver_necesidad_networking.html', {
+        'necesidad': necesidad,
+        'palabras': palabras
+    })
     
 @login_required
-@user_passes_test(lambda u: u.is_staff)
 def ver_oferta(request, oferta_id):
     oferta = get_object_or_404(Oferta, pk=oferta_id)
     return render(request, 'bolsa/ver_oferta.html', {'oferta': oferta})

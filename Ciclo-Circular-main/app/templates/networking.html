@@ -1,123 +1,170 @@
-{% extends 'base_public.html' %} {% block content %}
-<div class="container mx-auto px-4 py-8 max-w-4xl">
-    
-    <div class="mb-8">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-            <i class="fa-solid fa-handshake text-blue-500"></i> Ofrezco / Necesito
-        </h2>
-        <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">
-            Actualiza lo que ofreces y lo que necesitas para hacer match con otros perfiles.
-        </p>
+{% extends 'base_public.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 pt-6 pb-12">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-2xl shadow-sm">
+                <i class="fa-solid fa-handshake"></i>
+            </div>
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Ofrezco / Necesito</h2>
+                <p class="text-sm text-slate-500">Conecta con otros perfiles mediante palabras clave generadas por IA.</p>
+            </div>
+        </div>
     </div>
 
-    <div class="space-y-6 md:space-y-8">
-        <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col relative overflow-hidden" x-data="{ loading: false, editKeywords: false }">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 pointer-events-none"></div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 relative z-10 flex items-center gap-2">
-                <span class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-hand-holding-heart text-sm"></i></span> Ofrezco
-            </h3>
-            <form method="POST" action="{% url 'guardar_oferta' %}" class="flex flex-col relative z-10" @submit="loading = true">
-                {% csrf_token %}
-                <textarea id="textarea_ofrezco" name="texto_oferta" rows="5" class="w-full p-4 rounded-xl bg-slate-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-600 text-slate-800 dark:text-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none transition mb-4" placeholder="Describe qué puedes ofrecer (Ej: Asesoría en IA, Diseño Web)...">{% if ultima_oferta %}{{ ultima_oferta.texto_oferta }}{% endif %}</textarea>
-                
-                
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                <div class="flex justify-between items-center">
-                    
-                    <button type="submit" :disabled="loading" class="px-6 py-2 rounded-lg text-white font-bold text-xs uppercase tracking-wider shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-70" :class="editKeywords ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'">
-                        <template x-if="!loading"><span x-text="editKeywords ? 'Guardar Cambios' : 'Guardar Oferta'"></span></template>
+        <!-- OFREZCO -->
+        <div class="flex flex-col gap-6">
+            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6 relative overflow-hidden" x-data="{ loading: false }">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full pointer-events-none"></div>
+                
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
+                        <i class="fa-solid fa-hand-holding-heart"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Ofrezco</h3>
+                </div>
+
+                <form method="POST" action="{% url 'guardar_oferta' %}" @submit="loading = true">
+                    {% csrf_token %}
+                    <textarea name="texto_oferta" rows="4" 
+                        class="w-full p-4 rounded-xl bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none resize-none transition mb-4"
+                        placeholder="Describe qué puedes ofrecer...">{% if ultima_oferta %}{{ ultima_oferta.descripcion }}{% endif %}</textarea>
+                    <button type="submit" :disabled="loading"
+                        class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2">
+                        <template x-if="!loading"><span><i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Oferta</span></template>
                         <template x-if="loading"><span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</span></template>
                     </button>
-                </div>
-            </form>
-            {% if palabras_oferta %}
-            <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700 relative z-10" x-show="!editKeywords">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Palabras Clave Actuales</p>
-                <div class="flex flex-wrap gap-2">
-                    {% for palabra in palabras_oferta %}
-                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">{{ palabra }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-            {% if historial_ofertas %}
-                <div class="mt-6">
-                    <h4 class="font-bold text-slate-700 dark:text-slate-200 mb-2">Historial de Ofertas</h4>
-                    <ul class="space-y-2">
-                        {% for oferta in historial_ofertas %}
-                        <li class="p-3 bg-slate-50 dark:bg-[#0f172a] rounded-xl flex justify-between items-center">
-                            <span>{{ oferta.descripcion }}</span>
-                            <div class="flex gap-2">
-                                <a href="{% url 'ver_oferta' oferta.id_oferta %}" title="Ver Oferta" class="text-green-600 hover:text-green-800">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-                                <a href="{% url 'editar_networking_oferta' oferta.id_oferta %}" title="Editar Oferta" class="text-blue-600 hover:text-blue-800">
-                                    <i class="fa-solid fa-pen"></i>
-                                </a>
-                                <a href="{% url 'eliminar_networking_oferta' oferta.id_oferta %}" title="Eliminar Oferta" class="text-red-600 hover:text-red-800">
-                                    <i class="fa-solid fa-trash"></i>
-                                </a>
-                            </div>
-                        </li>
+                </form>
+
+                {% if palabras_oferta %}
+                <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                        <i class="fa-solid fa-robot mr-1"></i> Palabras Clave IA
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for palabra in palabras_oferta %}
+                        <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">{{ palabra }}</span>
                         {% endfor %}
-                    </ul>
+                    </div>
                 </div>
                 {% endif %}
-            {% endif %}
-        </div>
+            </div>
 
-        <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col relative overflow-hidden" x-data="{ loading: false, editKeywords: false }">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4 pointer-events-none"></div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 relative z-10 flex items-center gap-2">
-                <span class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400"><i class="fa-solid fa-hand-sparkles text-sm"></i></span> Necesito
-            </h3>
-            <form method="POST" action="{% url 'guardar_necesidad' %}" class="flex flex-col relative z-10" @submit="loading = true">
-                {% csrf_token %}
-                <textarea id="textarea_necesito" name="texto_necesita" rows="5" class="w-full p-4 rounded-xl bg-slate-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-600 text-slate-800 dark:text-slate-200 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none resize-none transition mb-4" placeholder="Describe qué estás buscando (Ej: Prácticas, Mentoría, Colaboración)...">{% if ultima_necesidad %}{{ ultima_necesidad.texto_necesita }}{% endif %}</textarea>
-                
-                
-
-                <div class="flex justify-between items-center">
-                    
-                    <button type="submit" :disabled="loading" class="px-6 py-2 rounded-lg text-white font-bold text-xs uppercase tracking-wider shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-70" :class="editKeywords ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'">
-                        <template x-if="!loading"><span x-text="editKeywords ? 'Guardar Cambios' : 'Guardar Necesidad'"></span></template>
-                        <template x-if="loading"><span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</span></template>
-                    </button>
-                </div>
-                {% if historial_ofertas %}
-                    <div class="mt-6">
-                        <h4 class="font-bold text-slate-700 dark:text-slate-200 mb-2">Historial de Necesidades</h4>
-                        <ul class="space-y-2">
-                            {% for oferta in historial_ofertas %}
-                            <li class="p-3 bg-slate-50 dark:bg-[#0f172a] rounded-xl flex justify-between items-center">
-                                <span>{{ oferta.descripcion }}</span>
-                                <div class="flex gap-2">
-                                <a href="{% url 'ver_oferta' oferta.id_oferta %}" title="Ver Oferta" class="text-green-600 hover:text-green-800">
-                                    <i class="fa-solid fa-eye"></i>
+            <!-- Historial Ofertas -->
+            {% if historial_ofertas %}
+            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6">
+                <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-500"></i> Historial de Ofertas
+                </h4>
+                <div class="space-y-3">
+                    {% for oferta in historial_ofertas %}
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 group">
+                        <p class="text-sm text-slate-700 dark:text-slate-300 mb-3 line-clamp-2">{{ oferta.descripcion }}</p>
+                        <div class="flex flex-wrap gap-1 mb-3">
+                            {% if oferta.palabra1 %}<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">{{ oferta.palabra1 }}</span>{% endif %}
+                            {% if oferta.palabra2 %}<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">{{ oferta.palabra2 }}</span>{% endif %}
+                            {% if oferta.palabra3 %}<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">{{ oferta.palabra3 }}</span>{% endif %}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400">{{ oferta.creado|date:"d M Y" }}</span>
+                            <div class="flex gap-2">
+                                <a href="{% url 'ver_oferta' oferta.id_oferta %}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition" title="Ver">
+                                    <i class="fa-solid fa-eye text-xs"></i>
                                 </a>
-                                <a href="{% url 'editar_networking_oferta' oferta.id_oferta %}" title="Editar Oferta" class="text-blue-600 hover:text-blue-800">
-                                    <i class="fa-solid fa-pen"></i>
+                                <a href="{% url 'editar_networking_oferta' oferta.id_oferta %}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 transition" title="Editar">
+                                    <i class="fa-solid fa-pen text-xs"></i>
                                 </a>
-                                <a href="{% url 'eliminar_networking_oferta' oferta.id_oferta %}" title="Eliminar Oferta" class="text-red-600 hover:text-red-800">
-                                    <i class="fa-solid fa-trash"></i>
+                                <a href="{% url 'eliminar_networking_oferta' oferta.id_oferta %}" onclick="return confirm('¿Eliminar esta oferta?');" class="w-7 h-7 flex items-center justify-center rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition" title="Eliminar">
+                                    <i class="fa-solid fa-trash text-xs"></i>
                                 </a>
                             </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
+                        </div>
                     </div>
-                    {% endif %}
-            </form>
-            {% if palabras_necesidad %}
-            <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700 relative z-10" x-show="!editKeywords">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Palabras Clave Actuales</p>
-                <div class="flex flex-wrap gap-2">
-                    {% for palabra in palabras_necesidad %}
-                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 border border-amber-100 dark:border-amber-800">{{ palabra }}</span>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
         </div>
+
+        <!-- NECESITO -->
+        <div class="flex flex-col gap-6">
+            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6 relative overflow-hidden" x-data="{ loading: false }">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full pointer-events-none"></div>
+                
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600">
+                        <i class="fa-solid fa-hand-sparkles"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Necesito</h3>
+                </div>
+
+                <form method="POST" action="{% url 'guardar_necesidad' %}" @submit="loading = true">
+                    {% csrf_token %}
+                    <textarea name="texto_necesita" rows="4"
+                        class="w-full p-4 rounded-xl bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 text-sm focus:ring-2 focus:ring-amber-500 outline-none resize-none transition mb-4"
+                        placeholder="Describe qué estás buscando...">{% if ultima_necesidad %}{{ ultima_necesidad.texto_necesita }}{% endif %}</textarea>
+                    <button type="submit" :disabled="loading"
+                        class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2">
+                        <template x-if="!loading"><span><i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Necesidad</span></template>
+                        <template x-if="loading"><span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</span></template>
+                    </button>
+                </form>
+
+                {% if palabras_necesidad %}
+                <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                        <i class="fa-solid fa-robot mr-1"></i> Palabras Clave IA
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for palabra in palabras_necesidad %}
+                        <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 border border-amber-100 dark:border-amber-800">{{ palabra }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Historial Necesidades -->
+            {% if historial_necesidades %}
+            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6">
+                <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-500"></i> Historial de Necesidades
+                </h4>
+                <div class="space-y-3">
+                    {% for necesidad in historial_necesidades %}
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 group">
+                        <p class="text-sm text-slate-700 dark:text-slate-300 mb-3 line-clamp-2">{{ necesidad.texto_necesita }}</p>
+                        <div class="flex flex-wrap gap-1 mb-3">
+                            {% if necesidad.palabra1 %}<span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold">{{ necesidad.palabra1 }}</span>{% endif %}
+                            {% if necesidad.palabra2 %}<span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold">{{ necesidad.palabra2 }}</span>{% endif %}
+                            {% if necesidad.palabra3 %}<span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold">{{ necesidad.palabra3 }}</span>{% endif %}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400">{{ necesidad.creado|date:"d M Y" }}</span>
+                            <div class="flex gap-2">
+                                <a href="{% url 'ver_necesidad' necesidad.pk %}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition" title="Ver">
+                                    <i class="fa-solid fa-eye text-xs"></i>
+                                </a>
+                                <a href="{% url 'editar_networking_necesidad' necesidad.pk %}" class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 transition" title="Editar">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </a>
+                                <a href="{% url 'eliminar_networking_necesidad' necesidad.pk %}" onclick="return confirm('¿Eliminar esta necesidad?');" class="w-7 h-7 flex items-center justify-center rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition" title="Eliminar">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
     </div>
-    </div>
+</div>
 {% endblock %}

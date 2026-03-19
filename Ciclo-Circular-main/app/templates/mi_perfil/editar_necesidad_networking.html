@@ -1,0 +1,46 @@
+{% extends 'base_public.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 pt-6 pb-12">
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-8">
+        
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-700">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Editar Necesidad</h2>
+            </div>
+            <a href="{% url 'pagina_networking' %}" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition">
+                <i class="fa-solid fa-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Descripción</label>
+            <textarea name="texto_necesita" rows="6"
+                class="w-full p-4 rounded-xl bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 text-sm focus:ring-2 focus:ring-amber-500 outline-none resize-none transition mb-6">{{ necesidad.texto_necesita }}</textarea>
+            
+            {% if necesidad.palabra1 %}
+            <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100">
+                <p class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-2">
+                    <i class="fa-solid fa-robot mr-1"></i> Palabras clave actuales
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    {% if necesidad.palabra1 %}<span class="px-2 py-1 bg-white text-amber-700 rounded text-xs font-bold border border-amber-200">{{ necesidad.palabra1 }}</span>{% endif %}
+                    {% if necesidad.palabra2 %}<span class="px-2 py-1 bg-white text-amber-700 rounded text-xs font-bold border border-amber-200">{{ necesidad.palabra2 }}</span>{% endif %}
+                    {% if necesidad.palabra3 %}<span class="px-2 py-1 bg-white text-amber-700 rounded text-xs font-bold border border-amber-200">{{ necesidad.palabra3 }}</span>{% endif %}
+                    {% if necesidad.palabra4 %}<span class="px-2 py-1 bg-white text-amber-700 rounded text-xs font-bold border border-amber-200">{{ necesidad.palabra4 }}</span>{% endif %}
+                    {% if necesidad.palabra5 %}<span class="px-2 py-1 bg-white text-amber-700 rounded text-xs font-bold border border-amber-200">{{ necesidad.palabra5 }}</span>{% endif %}
+                </div>
+                <p class="text-[10px] text-amber-500 mt-2">Se regenerarán automáticamente al guardar.</p>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition shadow-md">
+                <i class="fa-solid fa-floppy-disk mr-2"></i> Guardar Cambios
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

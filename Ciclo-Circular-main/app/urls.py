@@ -171,7 +171,14 @@ urlpatterns = [
     #RUTA DE NECESITO OFREZCO
     
     path('ofrezco-necesito/', views.vista_networking, name='pagina_networking'),
+    # path('api/ofertas/<int:oferta_id>/', ver_oferta_api),
+    path('networking/guardar-oferta/', views.guardar_oferta, name='guardar_oferta'),
+
+    path('api/', include('api.urls')),
+    
     path('networking/oferta/editar/<int:oferta_id>/', views.editar_networking_oferta, name='editar_networking_oferta'),
     path('networking/oferta/eliminar/<int:oferta_id>/', views.eliminar_networking_oferta, name='eliminar_networking_oferta'),
-    path('networking/guardar-oferta/', views.guardar_oferta, name='guardar_oferta'),
+    path('networking/necesidad/editar/<int:necesidad_id>/', views.editar_networking_necesidad, name='editar_networking_necesidad'),
+    path('networking/necesidad/eliminar/<int:necesidad_id>/', views.eliminar_networking_necesidad, name='eliminar_networking_necesidad'),
+    path('networking/necesidad/ver/<int:necesidad_id>/', views.ver_necesidad, name='ver_necesidad'),
     ]

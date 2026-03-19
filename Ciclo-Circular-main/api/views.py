@@ -1,27 +1,26 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import UserSerializers
 from rest_framework import status
-from django.http import Http404
+from django.http import Http404, HttpResponse, JsonResponse
 from user.models import Usuario
-# CAMBIO: Importamos el nuevo modelo de actividad
-from app.models import RegistroActividad
+from app.models import RegistroActividad, Evento, PreguntaEvento, Oferta
 import json
 import os
 from django.db.models import F 
 import google.generativeai as genai
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from app.models import Evento, PreguntaEvento
-import json
+from .serializers import OfertaSerializer
+from rest_framework.decorators import api_view
 
 try:
-    genai.configure(api_key=settings.OPENAI_API_KEY) # Usamos tu variable de entorno
+    API_KEY = os.environ.get("GEMINI_API_KEY", os.environ.get("GOOGLE_API_KEY", "")).strip()
+    if API_KEY:
+        genai.configure(api_key=API_KEY)
 except:
-    pass # Manejo de error si no hay API Key configurada
+    pass
 # Create your views here.
 
 def home_api(request):
@@ -256,4 +255,66 @@ def obtener_top_preguntas_api(request, evento_id):
 
     return HttpResponse(html_response)
 
+@api_view(['GET', 'POST'])
+def ofertas_list(request):
+
+    # 🔹 LISTAR
+    if request.method == 'GET':
+        ofertas = Oferta.objects.all()
+        serializer = OfertaSerializer(ofertas, many=True)
+        return Response(serializer.data)
+
+    # 🔹 CREAR
+    elif request.method == 'POST':
+        serializer = OfertaSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(creado_por=request.user)  # 👈 AQUÍ VA TU LÍNEA
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def oferta_detail(request, pk):
+
+    try:
+        oferta = Oferta.objects.get(pk=pk)
+    except Oferta.DoesNotExist:
+        return Response({'error': 'No existe'}, status=404)
+
+    # 🔹 VER
+    if request.method == 'GET':
+        serializer = OfertaSerializer(oferta)
+        return Response(serializer.data)
+
+    # 🔹 EDITAR
+    elif request.method == 'PUT':
+        serializer = OfertaSerializer(oferta, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=400)
+
+    # 🔹 ELIMINAR
+    elif request.method == 'DELETE':
+        oferta.delete()
+        return Response({'mensaje': 'Eliminado'})
     
+@api_view(['GET'])
+def networking_ver_oferta(request, pk):
+    try:
+        oferta = Oferta.objects.get(pk=pk)
+    except Oferta.DoesNotExist:
+        return Response({'error': 'No existe'}, status=404)
+
+    serializer = OfertaSerializer(oferta)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def networking_ofertas_list(request):
+    ofertas = Oferta.objects.all()
+    serializer = OfertaSerializer(ofertas, many=True)
+    return Response(serializer.data)
