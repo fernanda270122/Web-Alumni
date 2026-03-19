@@ -127,10 +127,12 @@ urlpatterns = [
     path('procesamiento/', views.home, name='home_procesamiento'),
     path('notificaciones/', views.home, name='menu_notificaciones'),
     path('descargar-plantilla/', views.descargar_plantilla, name='descargar_plantilla'),
+    
     #path('mi-calendario/', views.vista_calendario, name='ver_calendario'),
     path('responder-invitacion-ajax/<int:evento_id>/<str:accion>/', views.responder_invitacion_ajax, name='responder_invitacion_ajax'),
     path('mi-calendario/', views.ver_calendario_view, name='ver_calendario'),
     path('ping/', views.ping),
+    
     # Esta es la ruta nueva exclusiva para el portal de administración
     
     path('cron/recordatorios/<str:token>/', views.ejecutar_recordatorios_cron, name='cron_recordatorios'),
@@ -165,4 +167,11 @@ urlpatterns = [
     
     path('pagos/membresia/iniciar/<int:plan_id>/', views.iniciar_pago_membresia, name='iniciar_pago_membresia'),
     path('api/bolsa/', include(router.urls)),
+    
+    #RUTA DE NECESITO OFREZCO
+    
+    path('ofrezco-necesito/', views.vista_networking, name='pagina_networking'),
+    path('networking/oferta/editar/<int:oferta_id>/', views.editar_networking_oferta, name='editar_networking_oferta'),
+    path('networking/oferta/eliminar/<int:oferta_id>/', views.eliminar_networking_oferta, name='eliminar_networking_oferta'),
+    path('networking/guardar-oferta/', views.guardar_oferta, name='guardar_oferta'),
     ]

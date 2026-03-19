@@ -53,7 +53,7 @@
     </style>
 </head>
 
-<body class="bg-lightBg text-slate-800 dark:bg-darkBg dark:text-slate-200 antialiased transition-colors duration-300 flex flex-col min-h-screen" hx-boost="true">
+<body class="bg-lightBg text-slate-800 dark:bg-darkBg dark:text-slate-200 antialiased transition-colors duration-300 flex flex-col min-h-screen">
 
     <nav class="fixed w-full z-50 top-0 border-b border-white/10 bg-[#0f172a] text-white shadow-md h-20" x-data="{ mobileMenuOpen: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
@@ -130,7 +130,8 @@
                 </a>
                 {% endif %}
 
-                <a href="{% url 'mi_perfil' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-address-card w-5 text-center text-primary"></i> Mis Datos</a>
+                <a href="{% url 'mi_perfil' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-address-card w-5 text-center text-primary"></i> Mis Datos</a>
                 
                 <a href="{% url 'mi_membresia' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
                     <i class="fa-solid fa-crown w-5 text-center text-amber-500"></i> Mi Membresía
@@ -210,7 +211,10 @@
                             <i class="fa-solid fa-crown w-5 text-center text-amber-500"></i> 
                             <span class="font-medium">Mi Membresía</span>
                         </a>
-                        
+                        <a href="{% url 'pagina_networking' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'pagina_networking' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-handshake w-5 text-center group-hover:text-blue-500 transition"></i> 
+                            <span class="font-medium">Ofrezco / Necesito</span>
+                        </a>
                         <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5">
                             <i class="fa-solid fa-microphone-lines w-5 text-center"></i> <span class="font-medium">Mi Pitch</span>
                         </a>

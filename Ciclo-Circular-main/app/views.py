@@ -1170,12 +1170,15 @@ def mi_perfil(request):
                 val = getattr(ultima_oferta, f'palabra{i}', None)
                 if val: palabras_oferta.append(val)
 
+
         ultima_necesidad = Necesidad.objects.filter(usuario=request.user).last()
         palabras_necesidad = []
+
         if ultima_necesidad:
             for i in range(1, 6):
                 val = getattr(ultima_necesidad, f'palabra{i}', None)
-                if val: palabras_necesidad.append(val)
+                if val:
+                    palabras_necesidad.append(val)
 
         # Consultamos las empresas/trabajos del usuario ordenados desde el más reciente
         trabajos_empresas = TrabajoEmpresa.objects.filter(usuario=request.user).order_by('-id')
@@ -1221,8 +1224,9 @@ def mi_perfil(request):
     except Exception as e:
         print(f"ERROR CRÍTICO EN MI PERFIL: {e}") # Mira la consola para ver el error real
         messages.error(request, "Ocurrió un error al cargar tu perfil. Intenta nuevamente.")
-        return redirect('home')
+        return render(request, 'mi_perfil.html', contexto)
 
+#---- Match en coincidencia de palabras clave de una oferta con el cv ----
 @login_required
 def mis_matches(request):
     resultados = obtener_matches_usuario(request.user)
@@ -2420,10 +2424,204 @@ def admin_necesidades(request):
                 <pre>{traceback.format_exc()}</pre>
             </div>
         """)
-# --- LÓGICA DE EDICIÓN (Sirve para Admin y Usuario) ---
 
+
+#---- NECESITO OFREZCO DE USUARIO -----
+@login_required
+def vista_networking(request):
+    from .models import Oferta, Necesidad
+    # HISTORIAL
+    ofertas_user = Oferta.objects.filter(creado_por=request.user).order_by('-creado')
+    necesidades_user = Necesidad.objects.filter(usuario=request.user).order_by('-creado')
+
+    # ÚLTIMOS REGISTROS
+    ultima_oferta = ofertas_user.first()
+    ultima_necesidad = necesidades_user.first()
+
+    # Construir listas de palabras para mostrar en HTML
+    palabras_oferta = [getattr(ultima_oferta, f'palabra{i}', None) for i in range(1,6) if getattr(ultima_oferta, f'palabra{i}', None)]
+    palabras_necesidad = [getattr(ultima_necesidad, f'palabra{i}', None) for i in range(1,6) if getattr(ultima_necesidad, f'palabra{i}', None)]
+
+    contexto = {
+        'ultima_oferta': ultima_oferta,
+        'palabras_oferta': palabras_oferta,
+        'ultima_necesidad': ultima_necesidad,
+        'palabras_necesidad': palabras_necesidad,
+        'historial_ofertas': ofertas_user,
+        'historial_necesidades': necesidades_user,
+    }
+
+    return render(request, 'networking.html', contexto)
 
 @login_required
+def guardar_oferta(request):
+    if request.method == 'POST':
+        try:
+            from .models import Oferta
+            import threading
+
+            texto_usuario = request.POST.get('texto_oferta', '').strip()
+            p_raw = request.POST.get('palabras_manuales', '').split(',')
+            p = [pal.strip() for pal in p_raw if pal.strip()]
+
+            if not texto_usuario:
+                messages.warning(request, "El campo de oferta no puede estar vacío.")
+                return redirect('pagina_networking')
+
+            # 1. Crear registro
+            oferta = Oferta.objects.create(
+                creado_por=request.user,
+                titulo="Aporte de Networking",
+                empresa="Networking Interno",
+                descripcion=texto_usuario,
+                palabra1=p[0] if len(p) > 0 else None,
+                palabra2=p[1] if len(p) > 1 else None,
+                palabra3=p[2] if len(p) > 2 else None,
+                palabra4=p[3] if len(p) > 3 else None,
+                palabra5=p[4] if len(p) > 4 else None,
+                activa=True
+            )
+
+            # 2. IA en segundo plano
+            def generar_keywords_background(oid):
+                try:
+                    obj = Oferta.objects.get(id_oferta=oid)
+                    palabras_ia = _obtener_keywords_gemini(obj.descripcion, 5)
+                    if isinstance(palabras_ia, list):
+                        obj.palabra1 = palabras_ia[0] if len(palabras_ia) > 0 else None
+                        obj.palabra2 = palabras_ia[1] if len(palabras_ia) > 1 else None
+                        obj.palabra3 = palabras_ia[2] if len(palabras_ia) > 2 else None
+                        obj.palabra4 = palabras_ia[3] if len(palabras_ia) > 3 else None
+                        obj.palabra5 = palabras_ia[4] if len(palabras_ia) > 4 else None
+                        obj.save()
+                except Exception as e:
+                    print(f"⚠️ Error IA background Networking: {e}")
+
+            threading.Thread(target=generar_keywords_background, args=(oferta.id_oferta,)).start()
+
+            messages.success(request, "¡Tu oferta de networking se ha guardado!")
+
+        except Exception as e:
+            print(f"ERROR AL GUARDAR: {e}")
+            messages.error(request, f"Hubo un error al guardar: {e}")
+
+    return redirect('pagina_networking')
+
+@login_required
+def ver_oferta(request, oferta_id):
+    from django.shortcuts import get_object_or_404, render
+    from .models import Oferta
+
+    oferta = get_object_or_404(Oferta, id_oferta=oferta_id)
+
+    # Opcional: puedes validar que solo el creador o staff pueda verla
+    if request.user != oferta.creado_por and not request.user.is_staff:
+        from django.contrib import messages
+        from django.shortcuts import redirect
+        messages.error(request, "No tienes permiso para ver esta oferta.")
+        return redirect('pagina_networking')
+
+    palabras_clave = [oferta.palabra1, oferta.palabra2, oferta.palabra3, oferta.palabra4, oferta.palabra5]
+    palabras_clave = [p for p in palabras_clave if p]  # Filtra los None o vacíos
+
+    contexto = {
+        'oferta': oferta,
+        'palabras_clave': palabras_clave,
+    }
+    return render(request, 'ver_oferta.html', contexto)
+
+@login_required
+def editar_networking_oferta(request, oferta_id):
+    import threading
+    from django.shortcuts import get_object_or_404, redirect, render
+    from django.contrib import messages
+    from .models import Oferta
+
+    try:
+        # 1. Buscamos la oferta por ID
+        oferta = get_object_or_404(Oferta, pk=oferta_id)
+        
+        # Permisos: Solo el dueño o staff
+        if request.user != oferta.creado_por and not request.user.is_staff:
+            messages.error(request, "No tienes permiso para editar esta oferta.")
+            return redirect('pagina_networking')
+
+        if request.method == 'POST':
+            # 2. ACTUALIZACIÓN DEL TEXTO
+            nuevo_texto = request.POST.get('texto_oferta')
+            if nuevo_texto:
+                oferta.descripcion = nuevo_texto
+                oferta.save()  # guardamos primero el texto
+
+            # 3. IA EN SEGUNDO PLANO (regenera palabras clave)
+            def generar_keywords_background(oid):
+                try:
+                    obj = Oferta.objects.get(id=oid)
+                    palabras = _obtener_keywords_gemini(obj.descripcion, 5)
+                    if isinstance(palabras, list):
+                        obj.palabra1 = palabras[0] if len(palabras) > 0 else None
+                        obj.palabra2 = palabras[1] if len(palabras) > 1 else None
+                        obj.palabra3 = palabras[2] if len(palabras) > 2 else None
+                        obj.palabra4 = palabras[3] if len(palabras) > 3 else None
+                        obj.palabra5 = palabras[4] if len(palabras) > 4 else None
+                        obj.save()
+                except Exception as e:
+                    print(f"⚠️ Error IA background Networking: {e}")
+
+            threading.Thread(target=generar_keywords_background, args=(oferta.id,)).start()
+
+            messages.success(request, "Oferta de networking actualizada correctamente.")
+            return redirect('pagina_networking')
+
+        # 4. PREPARACIÓN PARA EL RENDER (GET)
+        # Solo cargamos el texto para el formulario, las palabras clave se muestran automáticamente
+        oferta.texto_oferta = oferta.descripcion
+        return render(request, 'editar_oferta_networking.html', {'oferta': oferta})
+
+    except Exception as e:
+        import traceback
+        from django.http import HttpResponse
+        return HttpResponse(f"""
+            <div style='background: #330000; color: #ffcccc; padding: 20px;'>
+                <h1>🔥 ERROR AL EDITAR</h1>
+                <pre>{traceback.format_exc()}</pre>
+            </div>
+        """)
+
+@login_required
+def eliminar_networking_oferta(request, oferta_id):
+    from django.shortcuts import get_object_or_404, redirect
+    from django.contrib import messages
+    from .models import Oferta
+
+    try:
+        # 1. Buscamos la oferta asegurándonos de que existe
+        oferta = get_object_or_404(Oferta, pk=oferta_id)
+        
+        # 2. Verificación de seguridad: Solo el creador o un administrador pueden borrarla
+        if request.user == oferta.creado_por or request.user.is_staff:
+            oferta.delete()
+            messages.success(request, "La oferta de networking se ha eliminado correctamente.")
+        else:
+            messages.error(request, "No tienes permisos para eliminar esta oferta.")
+        
+        # 3. Redirigimos siempre a la página principal de networking
+        return redirect('pagina_networking')
+
+    except Exception as e:
+        import traceback
+        from django.http import HttpResponse
+        # Estética de error para facilitar el debug si algo falla en la base de datos
+        return HttpResponse(f"""
+            <div style='background: #330000; color: #ffcccc; border: 2px solid red; padding: 20px; font-family: monospace;'>
+                <h1 style='color: red;'>🔥 ERROR AL ELIMINAR NETWORKING</h1>
+                <h3>{str(e)}</h3>
+                <pre>{traceback.format_exc()}</pre>
+                <a href="/ofrezco-necesito/" style="color: white; font-weight: bold;">Volver atrás</a>
+            </div>
+        """)
+# --- LÓGICA DE EDICIÓN (Sirve para Admin y Usuario) ---
+#------BOLSA DE EMPLEO -------
 @login_required
 def editar_oferta(request, oferta_id):
     try:
