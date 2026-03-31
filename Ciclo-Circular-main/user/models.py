@@ -98,6 +98,15 @@ class Usuario(AbstractUser):
         blank=True, 
         verbose_name="Carrera del Estudiante"
     )
+    
+    universidad = models.ForeignKey(
+        'app.Universidad',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios',
+        verbose_name="Universidad del Estudiante"
+    )
 
     objects = UsuarioManager()
 

@@ -186,6 +186,10 @@
                             <i class="fa-regular fa-calendar w-5 text-center"></i> <span class="font-medium">Calendario</span>
                         </a>
                         
+                        <a href="{% url 'gestion_tienda' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'gestion_tienda' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-store w-5 text-center group-hover:text-blue-500 transition"></i> <span class="font-medium">Tienda</span>
+                        </a>
+                        
                         <a href="{% url 'admin_membresias' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'admin_membresias' %}bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 font-bold border-l-4 border-red-800 dark:border-red-400{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">
                             <i class="fa-solid fa-id-card w-5 text-center group-hover:text-red-800 dark:group-hover:text-red-400 transition"></i> 
                             <span class="font-medium">Membresías</span>

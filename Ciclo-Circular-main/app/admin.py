@@ -129,3 +129,8 @@ class EventoAdmin(admin.ModelAdmin):
 class InvitacionAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'evento', 'estado', 'fecha_actualizacion')
     list_filter = ('estado', 'evento')
+
+from .models import Producto, OrdenCompra
+
+admin.site.register(Producto)
+admin.site.register(OrdenCompra)
