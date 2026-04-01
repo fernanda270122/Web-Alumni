@@ -7726,11 +7726,15 @@ def eliminar_todos_logs(request):
     messages.success(request, "Historial eliminado completamente.")
     return redirect('admin_mensajeria')
 
+<<<<<<< HEAD
 # TIENDA
+=======
+>>>>>>> desarrollo
 @login_required
 def gestion_tienda(request):
     if not request.user.is_staff and (not request.user.es_coordinador or not request.user.universidad_coordinador):
         return redirect('home')
+<<<<<<< HEAD
     
     universidad = None
     if request.user.is_staff:
@@ -7758,6 +7762,24 @@ def gestion_tienda(request):
         'productos': productos,
         'ordenes': ordenes,
         'universidad': request.user.universidad_coordinador
+=======
+
+    from app.models import Producto, OrdenCompra
+
+    if request.user.is_staff:
+        productos = Producto.objects.all().order_by('-creado')
+        ordenes = OrdenCompra.objects.all().order_by('-creado')[:10]
+        universidad = None
+    else:
+        productos = Producto.objects.filter(universidad=request.user.universidad_coordinador).order_by('-creado')
+        ordenes = OrdenCompra.objects.filter(producto__universidad=request.user.universidad_coordinador).order_by('-creado')[:10]
+        universidad = request.user.universidad_coordinador
+
+    return render(request, 'admin_usuarios/gestion_tienda.html', {
+        'productos': productos,
+        'ordenes': ordenes,
+        'universidad': universidad
+>>>>>>> desarrollo
     })
 
 
@@ -7765,26 +7787,41 @@ def gestion_tienda(request):
 def crear_producto(request):
     if not request.user.is_staff and (not request.user.es_coordinador or not request.user.universidad_coordinador):
         return redirect('home')
+<<<<<<< HEAD
     
     universidad = request.user.universidad_coordinador if not request.user.is_staff else None
     
     from app.models import Producto
     
+=======
+
+    from app.models import Producto, Universidad
+
+>>>>>>> desarrollo
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion')
         precio = request.POST.get('precio')
         stock = request.POST.get('stock')
         imagen = request.FILES.get('imagen')
+<<<<<<< HEAD
         
         if nombre and precio and stock:
             from app.models import Universidad
+=======
+
+        if nombre and precio and stock:
+>>>>>>> desarrollo
             if request.user.is_staff:
                 uni_id = request.POST.get('universidad_id')
                 universidad_obj = Universidad.objects.filter(pk=uni_id).first()
             else:
                 universidad_obj = request.user.universidad_coordinador
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> desarrollo
             Producto.objects.create(
                 universidad=universidad_obj,
                 creado_por=request.user,
@@ -7798,9 +7835,15 @@ def crear_producto(request):
             messages.success(request, "Producto creado exitosamente.")
         else:
             messages.error(request, "Completa todos los campos obligatorios.")
+<<<<<<< HEAD
         
         return redirect('gestion_tienda')
     
+=======
+
+        return redirect('gestion_tienda')
+
+>>>>>>> desarrollo
     from app.models import Universidad
     universidades = Universidad.objects.all()
     return render(request, 'admin_usuarios/crear_producto.html', {'universidades': universidades})
@@ -7810,6 +7853,7 @@ def crear_producto(request):
 def eliminar_producto(request, producto_id):
     from app.models import Producto
     producto = get_object_or_404(Producto, pk=producto_id)
+<<<<<<< HEAD
     
     if request.user == producto.creado_por or request.user.is_staff:
         producto.delete()
@@ -7823,6 +7867,21 @@ def editar_producto(request, producto_id):
     from app.models import Producto
     producto = get_object_or_404(Producto, pk=producto_id)
     
+=======
+
+    if request.user == producto.creado_por or request.user.is_staff:
+        producto.delete()
+        messages.success(request, "Producto eliminado.")
+
+    return redirect('gestion_tienda')
+
+
+@login_required
+def editar_producto(request, producto_id):
+    from app.models import Producto
+    producto = get_object_or_404(Producto, pk=producto_id)
+
+>>>>>>> desarrollo
     if request.method == 'POST':
         producto.nombre = request.POST.get('nombre', producto.nombre)
         producto.descripcion = request.POST.get('descripcion', producto.descripcion)
@@ -7834,5 +7893,9 @@ def editar_producto(request, producto_id):
         producto.save()
         messages.success(request, "Producto actualizado.")
         return redirect('gestion_tienda')
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> desarrollo
     return render(request, 'admin_usuarios/editar_producto.html', {'producto': producto})
