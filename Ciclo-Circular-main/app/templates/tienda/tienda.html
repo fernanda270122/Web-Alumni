@@ -46,11 +46,6 @@
                     <span class="text-xs text-slate-400">Stock: {{ producto.stock }}</span>
                 </div>
 
-                <a href="{% url 'iniciar_pago_producto' producto.pk %}"
-                   class="w-full py-3 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-credit-card"></i> Comprar
-                </a>
-
                 <button onclick="abrirModal({{ producto.pk }}, '{{ producto.nombre }}', {{ producto.precio }})"
                    class="w-full py-3 text-center bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center gap-2">
                     <i class="fa-solid fa-credit-card"></i> Comprar
