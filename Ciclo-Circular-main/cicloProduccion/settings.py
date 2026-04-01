@@ -152,6 +152,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Whitenoise
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
+# --- ARCHIVOS DE MEDIA (imágenes subidas por usuarios) ---
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # --- 7. SEGURIDAD Y HTTPS ---
 if EN_RENDER or EN_PYTHONANYWHERE:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -253,3 +257,4 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 GOOGLE_API_KEY = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
+
