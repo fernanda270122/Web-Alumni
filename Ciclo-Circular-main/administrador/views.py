@@ -7767,6 +7767,8 @@ def crear_producto(request):
         return redirect('home')
 
     if request.method == 'POST':
+        print("FILES:", request.FILES)
+        print("POST:", request.POST)
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion')
         precio = request.POST.get('precio')
