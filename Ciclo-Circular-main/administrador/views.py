@@ -4973,6 +4973,7 @@ def admin_usuarios(request):
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def crear_usuario(request):
+    print(f"MÉTODO: {request.method}, AJAX: {request.headers.get('x-requested-with')}, ACTION: {request.POST.get('action')}")
     uni_id = request.GET.get("universidad") or request.POST.get("universidad")
     try:
         uni_id = int(uni_id)
@@ -4980,7 +4981,7 @@ def crear_usuario(request):
         uni_id = None
     
     # --- BLOQUE AJAX (API PROPIA + Deptos/Carreras) ---
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    if request.POST.get('action'):
         action = request.POST.get('action')
         
         if action == 'buscar_deptos':
@@ -5139,6 +5140,7 @@ def editar_usuario(request, user_id):
     # --- API DE COMUNAS AJAX PARA EDICIÓN ---
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         action = request.POST.get('action')
+        print(f"AJAX recibido - action: {action}")
         if action == 'buscar_comunas':
             region_nombre = request.POST.get('id')
             chile_data = {
@@ -5308,95 +5310,6 @@ def resetear_clave(request, user_id):
 # Función auxiliar para generar clave (si no la tienes en otro lado)
 def generar_clave(longitud=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=longitud))
-
-@login_required
-@user_passes_test(lambda u: u.is_staff)
-def crear_usuario(request):
-    uni_id = request.GET.get("universidad")
-    
-    # --- BLOQUE AJAX (ESTANDARIZADO: Siempre devuelve 'id' y 'nombre') ---
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        action = request.POST.get('action')
-        
-        if action == 'buscar_deptos':
-            fac_id = request.POST.get('id')
-            deptos = Departamento.objects.filter(facultad_id=fac_id).values('pk', 'nombre').order_by('nombre')
-            return JsonResponse([{'id': d['pk'], 'nombre': d['nombre']} for d in deptos], safe=False)
-            
-        elif action == 'buscar_carreras':
-            depto_id = request.POST.get('id')
-            carreras = Carrera.objects.filter(departamento_id=depto_id).values('pk', 'nombre').order_by('nombre')
-            # AQUÍ ESTABA EL ERROR: Devolvemos 'id', no 'pk' ni 'id_carrera' para que JS lo entienda siempre
-            return JsonResponse([{'id': c['pk'], 'nombre': c['nombre']} for c in carreras], safe=False)
-
-    # --- BLOQUE POST (Guardar Usuario) ---
-    if request.method == "POST":
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        nombre = request.POST.get('nombre')
-        apellido = request.POST.get('apellido')
-        telefono = request.POST.get('telefono')
-        carrera_id = request.POST.get('carrera') # Gracias al name="carrera" en el HTML
-        
-        # Validaciones básicas
-        if not username or not email or not nombre or not apellido:
-            messages.error(request, "Todos los campos de texto son obligatorios.")
-            return redirect(request.path + f"?universidad={uni_id}")
-
-        if Usuario.objects.filter(username=username).exists():
-            messages.error(request, "Ese Username ya existe.")
-            return redirect(request.path + f"?universidad={uni_id}")
-
-        try:
-            clave_temporal = get_random_string(length=8)
-            
-            # Crear usuario
-            nuevo_usuario = Usuario.objects.create_user(
-                username=username,
-                email=email,
-                password=clave_temporal,
-                first_name=nombre,
-                last_name=apellido
-            )
-            
-            # Guardar Teléfono
-            if hasattr(nuevo_usuario, 'telefono'):
-                nuevo_usuario.telefono = telefono
-            
-            # Asignar Carrera
-            if carrera_id:
-                try:
-                    carrera_obj = Carrera.objects.get(pk=carrera_id)
-                    nuevo_usuario.carrera = carrera_obj
-                except Carrera.DoesNotExist:
-                    pass 
-            
-            nuevo_usuario.save()
-
-            # Enviar Correo
-            try:
-                asunto = "Bienvenido a Alumni"
-                mensaje = f"Hola {nombre},\nTu cuenta ha sido creada.\nUsuario: {username}\nClave: {clave_temporal}\n"
-                send_mail(asunto, mensaje, settings.EMAIL_HOST_USER, [email], fail_silently=False)
-                messages.success(request, f"Usuario creado exitosamente.")
-            except Exception:
-                messages.warning(request, f"Usuario creado, pero falló el correo. Clave: {clave_temporal}")
-
-            return redirect(f"/administrador/usuarios?universidad={uni_id}")
-
-        except Exception as e:
-            messages.error(request, f"Error al crear: {e}")
-            return redirect(request.path + f"?universidad={uni_id}")
-
-    # --- BLOQUE GET (Carga inicial) ---
-    facultades = []
-    if uni_id:
-        facultades = Facultad.objects.filter(universidad_id=uni_id)
-
-    return render(request, "coordinador/crear_usuario.html", {
-        "facultades": facultades, 
-        "universidad_id": uni_id
-    })
 
 def obtener_usuarios_sin_actividad(id_universidad):
     # todas las áreas de esa Universidad
