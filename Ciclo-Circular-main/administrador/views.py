@@ -5099,7 +5099,7 @@ def crear_usuario(request):
     if uni_id is not None:
         facultades = Facultad.objects.filter(universidad_id=uni_id)
 
-    return render(request, "admin_usuarios/crear_usuario.html", {
+    return render(request, "coordinador/crear_usuario.html", {
         "facultades": facultades, 
         "universidad_id": uni_id
     })
@@ -5393,7 +5393,7 @@ def crear_usuario(request):
     if uni_id:
         facultades = Facultad.objects.filter(universidad_id=uni_id)
 
-    return render(request, "admin_usuarios/crear_usuario.html", {
+    return render(request, "coordinador/crear_usuario.html", {
         "facultades": facultades, 
         "universidad_id": uni_id
     })
@@ -5613,7 +5613,7 @@ def ver_cv(request, user_id):
         # Filtramos los None o cadenas vacías
         palabras = [p for p in palabras if p]
 
-    return render(request, 'admin_usuarios/ver_cv.html', {
+    return render(request, 'coordinador/ver_cv.html', {
         'usuario': usuario,
         'cv': cv,
         'palabras': palabras,
@@ -5637,7 +5637,7 @@ def agregar_cv(request, user_id):
 
             return redirect("ver_cv", user_id=usuario.id)
 
-    return render(request, "admin_usuarios/agregar_cv.html", {
+    return render(request, "coordinador/agregar_cv.html", {
         "usuario": usuario
     })
     
@@ -6242,7 +6242,7 @@ def ver_cv_coordinacion(request, user_id):
         palabras = [p for p in palabras if p]
 
     # Renderizamos el template de Admin pero con diseño público
-    return render(request, "admin_usuarios/ver_cv.html", {
+    return render(request, "coordinador/ver_cv.html", {
         "usuario": usuario,
         "cv": cv,
         "palabras": palabras,
@@ -7082,7 +7082,7 @@ def detalle_usuario_admin(request, user_id):
     trabajos_empresas = TrabajoEmpresa.objects.filter(usuario=usuario_det).order_by('-id')
     
     # Obtener palabras clave de ofrezco/necesito
-    ultima_oferta = Oferta.objects.filter(usuario=usuario_det).last()
+    ultima_oferta = Oferta.objects.filter(creado_por=usuario_det).last()
     palabras_oferta = [getattr(ultima_oferta, f'palabra{i}') for i in range(1, 6) if ultima_oferta and getattr(ultima_oferta, f'palabra{i}')]
     
     ultima_necesidad = Necesidad.objects.filter(usuario=usuario_det).last()

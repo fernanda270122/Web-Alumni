@@ -1,0 +1,114 @@
+{% extends base_template|default:'base_admin.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ usuario_det.get_full_name }}</h2>
+            <p class="text-sm text-slate-500">@{{ usuario_det.username }}</p>
+        </div>
+        <a href="javascript:history.back()" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-100 transition">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <!-- Datos personales -->
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-address-card text-blue-500"></i> Datos Personales
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-bold mb-1">Email</p>
+                <p class="text-slate-800 dark:text-white">{{ usuario_det.email|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-bold mb-1">Teléfono</p>
+                <p class="text-slate-800 dark:text-white">{{ usuario_det.telefono|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-bold mb-1">Carrera</p>
+                <p class="text-slate-800 dark:text-white">{{ usuario_det.carrera|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-bold mb-1">Universidad</p>
+                <p class="text-slate-800 dark:text-white">{{ usuario_det.carrera.departamento.facultad.universidad|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-bold mb-1">Región</p>
+                <p class="text-slate-800 dark:text-white">{{ usuario_det.region|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-bold mb-1">Comuna</p>
+                <p class="text-slate-800 dark:text-white">{{ usuario_det.comuna|default:"—" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Palabras clave -->
+    {% if palabras_oferta or palabras_necesidad %}
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-handshake text-emerald-500"></i> Ofrezco / Necesito
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-bold mb-2">Ofrezco</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for p in palabras_oferta %}
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">{{ p }}</span>
+                    {% empty %}
+                    <span class="text-xs text-slate-400">Sin datos</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-bold mb-2">Necesito</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for p in palabras_necesidad %}
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">{{ p }}</span>
+                    {% empty %}
+                    <span class="text-xs text-slate-400">Sin datos</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Experiencia laboral -->
+    {% if trabajos_empresas %}
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-briefcase text-amber-500"></i> Experiencia Laboral
+        </h3>
+        <div class="space-y-3">
+            {% for trabajo in trabajos_empresas %}
+            <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <p class="font-bold text-slate-800 dark:text-white text-sm">{{ trabajo.empresa|default:"—" }}</p>
+                <p class="text-xs text-slate-500">{{ trabajo.cargo|default:"" }} {% if trabajo.categoria_ia %} · {{ trabajo.categoria_ia }}{% endif %}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Usuarios similares -->
+    {% if usuarios_similares %}
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-users text-purple-500"></i> Usuarios Similares
+        </h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {% for u in usuarios_similares %}
+            <a href="{% url 'detalle_usuario_admin' u.id %}" class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition">
+                <p class="font-bold text-slate-800 dark:text-white text-sm">{{ u.get_full_name }}</p>
+                <p class="text-xs text-slate-500">@{{ u.username }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
