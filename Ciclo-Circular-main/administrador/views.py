@@ -5090,8 +5090,8 @@ def crear_usuario(request):
                 full_url = f"{scheme}://{domain}{reset_url}"
                 print(f"🔗 Link generado: {full_url}")
                 mensaje = f"Hola {nombre},\n\nTu cuenta ha sido creada en la plataforma Alumni.\n\nUsuario: {username}\n\nPara activar tu cuenta y crear tu contraseña, haz clic aquí:\n{full_url}\n\nEste enlace expirará en 24 horas.\n\nBienvenido/a,\nEquipo Alumni"
-                send_mail(asunto, mensaje, settings.EMAIL_HOST_USER, [email], fail_silently=False)
-                print("✅ Correo enviado")
+                EmailThread(asunto, mensaje, [email]).start()
+                print("✅ Correo enviado en segundo plano")
                 messages.success(request, "Usuario creado exitosamente. Se envió el correo de activación.")
             except Exception as e:
                 print(f"ERROR CORREO: {e}")
