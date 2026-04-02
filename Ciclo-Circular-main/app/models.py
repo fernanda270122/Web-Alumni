@@ -377,7 +377,7 @@ class Producto(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     precio = models.IntegerField(default=0)
     stock = models.IntegerField(default=0)
-    imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
+    imagen = models.URLField(blank=True, null=True)
     activo = models.BooleanField(default=True)
     creado = models.DateTimeField(auto_now_add=True)
 

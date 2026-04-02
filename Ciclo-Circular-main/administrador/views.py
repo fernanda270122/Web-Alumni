@@ -26,6 +26,7 @@ import random
 import string
 import random
 import string
+import cloudinary.uploader
 import collections
 import traceback # Importante para ver errores detallados
 from io import BytesIO
@@ -7773,7 +7774,10 @@ def crear_producto(request):
         descripcion = request.POST.get('descripcion')
         precio = request.POST.get('precio')
         stock = request.POST.get('stock')
-        imagen = request.FILES.get('imagen')
+        imagen = None
+        if request.FILES.get('imagen'):
+            upload_result = cloudinary.uploader.upload(request.FILES.get('imagen'))
+            imagen = upload_result.get('secure_url')
 
         if nombre and precio and stock:
             if request.user.is_staff:
@@ -7828,7 +7832,10 @@ def editar_producto(request, producto_id):
         producto.activo = request.POST.get('activo') == 'on'
 
         if request.FILES.get('imagen'):
-            producto.imagen = request.FILES.get('imagen')
+            producto.imagen = None
+        if request.FILES.get('imagen'):
+            upload_result = cloudinary.uploader.upload(request.FILES.get('imagen'))
+            imagen = upload_result.get('secure_url')
 
         producto.save()
         messages.success(request, "Producto actualizado.")
