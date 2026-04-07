@@ -1,0 +1,56 @@
+{% extends base_template|default:'base_admin.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+
+    <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Encuestas</h2>
+            <p class="text-sm text-slate-500">Gestión de encuestas por sede</p>
+        </div>
+        <a href="{% url 'crear_encuesta' %}" class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow transition">
+            <i class="fa-solid fa-plus"></i> Nueva Encuesta
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="space-y-2">
+        {% for message in messages %}
+        <div class="p-4 rounded-xl text-sm font-bold flex items-center gap-3
+            {% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-700
+            {% else %}bg-emerald-50 border border-emerald-200 text-emerald-700{% endif %}">
+            <i class="fa-solid {% if message.tags == 'error' %}fa-triangle-exclamation{% else %}fa-check-circle{% endif %}"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6">
+        {% if encuestas %}
+        <div class="space-y-3">
+            {% for encuesta in encuestas %}
+            <div class="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div>
+                    <p class="font-bold text-slate-800 dark:text-white text-sm">{{ encuesta.titulo }}</p>
+                    <p class="text-xs text-slate-500">{{ encuesta.universidad.nombre }} · Vence: {{ encuesta.fecha_vencimiento|date:"d/m/Y" }} · {% if encuesta.activa %}<span class="text-emerald-600">Activa</span>{% else %}<span class="text-red-500">Cerrada</span>{% endif %}</p>
+                </div>
+                <div class="flex gap-2">
+                    <a href="{% url 'ver_resultados_encuesta' encuesta.pk %}" class="px-3 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-bold transition">
+                        <i class="fa-solid fa-chart-bar mr-1"></i> Resultados
+                    </a>
+                    <a href="{% url 'descargar_resultados_encuesta' encuesta.pk %}" class="px-3 py-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold transition">
+                        <i class="fa-solid fa-download mr-1"></i> Excel
+                    </a>
+                    <a href="{% url 'eliminar_encuesta' encuesta.pk %}" onclick="return confirm('¿Eliminar esta encuesta?')" class="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold transition">
+                        <i class="fa-solid fa-trash"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center text-slate-400 text-sm py-10">No hay encuestas creadas aún.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

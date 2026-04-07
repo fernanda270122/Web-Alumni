@@ -1,0 +1,133 @@
+{% extends base_template|default:'base_admin.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Nueva Encuesta</h2>
+        </div>
+        <a href="{% url 'gestion_encuestas' %}" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-100 transition">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-8">
+        <form method="POST" id="formEncuesta" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Título *</label>
+                <input type="text" name="titulo" required class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+
+            {% if user.is_staff %}
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Universidad *</label>
+                <select name="universidad_id" required class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    <option value="">-- Seleccionar --</option>
+                    {% for uni in universidades %}
+                    <option value="{{ uni.pk }}">{{ uni.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Área/Carrera (opcional)</label>
+                <select name="carrera_id" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    <option value="">-- Todas las áreas --</option>
+                    {% for carrera in carreras %}
+                    <option value="{{ carrera.pk }}">{{ carrera.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Fecha de Vencimiento *</label>
+                <input type="date" name="fecha_vencimiento" required class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+
+            <!-- Preguntas de opción múltiple -->
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase">Preguntas de Opción Múltiple</h3>
+                    <button type="button" onclick="agregarPregunta()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition">
+                        <i class="fa-solid fa-plus mr-1"></i> Agregar Pregunta
+                    </button>
+                </div>
+                <div id="contenedor-preguntas" class="space-y-4"></div>
+            </div>
+
+            <!-- Pregunta de texto -->
+            <div>
+                <h3 class="text-xs font-bold text-slate-500 uppercase mb-2">Pregunta de Texto Libre</h3>
+                <input type="text" name="pregunta_texto" required placeholder="Ej: ¿Tienes algún comentario adicional?" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow-md">
+                <i class="fa-solid fa-check mr-2"></i> Crear Encuesta
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+let contadorPreguntas = 0;
+
+function agregarPregunta() {
+    const contenedor = document.getElementById('contenedor-preguntas');
+    const idx = contadorPreguntas;
+    const div = document.createElement('div');
+    div.className = 'p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3';
+    div.id = `pregunta-${idx}`;
+    div.innerHTML = `
+        <div class="flex justify-between items-center">
+            <p class="text-xs font-bold text-slate-500 uppercase">Pregunta ${idx + 1}</p>
+            <button type="button" onclick="eliminarPregunta(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold">
+                <i class="fa-solid fa-trash"></i> Eliminar
+            </button>
+        </div>
+        <input type="text" name="pregunta_${idx}" required placeholder="Texto de la pregunta" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+        <div id="opciones-${idx}" class="space-y-2"></div>
+        <button type="button" onclick="agregarOpcion(${idx})" class="text-blue-600 text-xs font-bold hover:underline">
+            <i class="fa-solid fa-plus mr-1"></i> Agregar Opción
+        </button>
+    `;
+    contenedor.appendChild(div);
+    contadorPreguntas++;
+    agregarOpcion(idx);
+    agregarOpcion(idx);
+}
+
+function agregarOpcion(preguntaIdx) {
+    const contenedor = document.getElementById(`opciones-${preguntaIdx}`);
+    const opcionIdx = contenedor.children.length;
+    const div = document.createElement('div');
+    div.className = 'flex gap-2';
+    div.innerHTML = `
+        <input type="text" name="opcion_${preguntaIdx}_${opcionIdx}" placeholder="Opción ${opcionIdx + 1}" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 px-2">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    `;
+    contenedor.appendChild(div);
+}
+
+function eliminarPregunta(idx) {
+    document.getElementById(`pregunta-${idx}`).remove();
+}
+
+// Agregar 1 pregunta por defecto al cargar
+function initEncuesta() {
+    const contenedor = document.getElementById('contenedor-preguntas');
+    if (contenedor) {
+        contadorPreguntas = 0;
+        contenedor.innerHTML = '';
+        agregarPregunta();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initEncuesta);
+document.addEventListener('htmx:afterSwap', initEncuesta);
+</script>
+{% endblock %}

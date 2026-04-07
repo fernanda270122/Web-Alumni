@@ -400,3 +400,61 @@ class OrdenCompra(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username} - {self.producto.nombre} - {self.estado}"
+
+# --- ENCUESTAS ---
+
+class Encuesta(models.Model):
+    titulo = models.CharField(max_length=200)
+    universidad = models.ForeignKey(Universidad, on_delete=models.CASCADE, related_name='encuestas')
+    carrera = models.ForeignKey(Carrera, on_delete=models.SET_NULL, null=True, blank=True, related_name='encuestas')
+    creada_por = models.ForeignKey('user.Usuario', on_delete=models.CASCADE)
+    fecha_vencimiento = models.DateField()
+    activa = models.BooleanField(default=True)
+    creada = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.titulo} - {self.universidad.nombre}"
+
+
+class PreguntaEncuesta(models.Model):
+    TIPO_CHOICES = [
+        ('opcion_multiple', 'Opción Múltiple'),
+        ('texto', 'Texto Libre'),
+    ]
+    encuesta = models.ForeignKey(Encuesta, on_delete=models.CASCADE, related_name='preguntas')
+    texto = models.CharField(max_length=300)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    orden = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.texto[:50]} ({self.tipo})"
+
+
+class OpcionPregunta(models.Model):
+    pregunta = models.ForeignKey(PreguntaEncuesta, on_delete=models.CASCADE, related_name='opciones')
+    texto = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.texto
+
+
+class RespuestaEncuesta(models.Model):
+    usuario = models.ForeignKey('user.Usuario', on_delete=models.CASCADE)
+    encuesta = models.ForeignKey(Encuesta, on_delete=models.CASCADE, related_name='respuestas')
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('usuario', 'encuesta')
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.encuesta.titulo}"
+
+
+class DetalleRespuesta(models.Model):
+    respuesta = models.ForeignKey(RespuestaEncuesta, on_delete=models.CASCADE, related_name='detalles')
+    pregunta = models.ForeignKey(PreguntaEncuesta, on_delete=models.CASCADE)
+    opcion_seleccionada = models.ForeignKey(OpcionPregunta, on_delete=models.SET_NULL, null=True, blank=True)
+    texto_respuesta = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.pregunta.texto[:30]} - {self.respuesta.usuario.username}"

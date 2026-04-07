@@ -7781,3 +7781,196 @@ def editar_producto(request, producto_id):
         'producto': producto
     })
     
+# ============================================
+# ENCUESTAS
+# ============================================
+from app.models import Encuesta, PreguntaEncuesta, OpcionPregunta, RespuestaEncuesta, DetalleRespuesta
+
+@login_required
+def gestion_encuestas(request):
+    if not request.user.is_staff and not request.user.es_coordinador:
+        return redirect('home')
+
+    if request.user.is_staff:
+        encuestas = Encuesta.objects.all().order_by('-creada')
+    else:
+        encuestas = Encuesta.objects.filter(
+            universidad=request.user.universidad_coordinador
+        ).order_by('-creada')
+
+    base_template = 'base_admin.html' if request.user.is_staff else 'base_public.html'
+    return render(request, 'encuestas/gestion_encuestas.html', {
+        'encuestas': encuestas,
+        'base_template': base_template
+    })
+
+@login_required
+def crear_encuesta(request):
+    if not request.user.is_staff and not request.user.es_coordinador:
+        return redirect('home')
+
+    if request.user.is_staff:
+        universidades = Universidad.objects.all()
+    else:
+        universidades = [request.user.universidad_coordinador]
+
+    if request.method == 'POST':
+        titulo = request.POST.get('titulo')
+        universidad_id = request.POST.get('universidad_id') if request.user.is_staff else request.user.universidad_coordinador.pk
+        carrera_id = request.POST.get('carrera_id') or None
+        fecha_vencimiento = request.POST.get('fecha_vencimiento')
+
+        universidad_obj = Universidad.objects.get(pk=universidad_id)
+        carrera_obj = Carrera.objects.filter(pk=carrera_id).first() if carrera_id else None
+
+        encuesta = Encuesta.objects.create(
+            titulo=titulo,
+            universidad=universidad_obj,
+            carrera=carrera_obj,
+            creada_por=request.user,
+            fecha_vencimiento=fecha_vencimiento,
+            activa=True
+        )
+
+        # Guardar preguntas de opción múltiple
+        i = 0
+        while True:
+            texto_pregunta = request.POST.get(f'pregunta_{i}')
+            if texto_pregunta is None:
+                break
+            pregunta = PreguntaEncuesta.objects.create(
+                encuesta=encuesta,
+                texto=texto_pregunta,
+                tipo='opcion_multiple',
+                orden=i
+            )
+            j = 0
+            while True:
+                opcion = request.POST.get(f'opcion_{i}_{j}')
+                if opcion is None:
+                    break
+                OpcionPregunta.objects.create(pregunta=pregunta, texto=opcion)
+                j += 1
+            i += 1
+
+        # Guardar pregunta de texto
+        texto_libre = request.POST.get('pregunta_texto')
+        if texto_libre:
+            PreguntaEncuesta.objects.create(
+                encuesta=encuesta,
+                texto=texto_libre,
+                tipo='texto',
+                orden=i
+            )
+
+        messages.success(request, "Encuesta creada exitosamente.")
+        return redirect('gestion_encuestas')
+
+    base_template = 'base_admin.html' if request.user.is_staff else 'base_public.html'
+
+    if request.user.is_staff:
+        carreras = Carrera.objects.all()
+    else:
+        carreras = Carrera.objects.filter(
+            departamento__facultad__universidad=request.user.universidad_coordinador
+        )
+
+    return render(request, 'encuestas/crear_encuesta.html', {
+        'universidades': universidades,
+        'carreras': carreras,
+        'base_template': base_template
+    })
+
+
+@login_required
+def ver_resultados_encuesta(request, encuesta_id):
+    if not request.user.is_staff and not request.user.es_coordinador:
+        return redirect('home')
+
+    encuesta = get_object_or_404(Encuesta, pk=encuesta_id)
+    preguntas = encuesta.preguntas.all().order_by('orden')
+    total_respuestas = RespuestaEncuesta.objects.filter(encuesta=encuesta).count()
+
+    resultados = []
+    for pregunta in preguntas:
+        if pregunta.tipo == 'opcion_multiple':
+            opciones = []
+            for opcion in pregunta.opciones.all():
+                count = DetalleRespuesta.objects.filter(
+                    pregunta=pregunta,
+                    opcion_seleccionada=opcion
+                ).count()
+                porcentaje = round((count / total_respuestas * 100), 1) if total_respuestas > 0 else 0
+                opciones.append({
+                    'texto': opcion.texto,
+                    'count': count,
+                    'porcentaje': porcentaje
+                })
+            resultados.append({
+                'pregunta': pregunta,
+                'tipo': 'opcion_multiple',
+                'opciones': opciones
+            })
+        else:
+            respuestas_texto = DetalleRespuesta.objects.filter(
+                pregunta=pregunta
+            ).exclude(texto_respuesta='').values_list('texto_respuesta', flat=True)
+            resultados.append({
+                'pregunta': pregunta,
+                'tipo': 'texto',
+                'respuestas': list(respuestas_texto)
+            })
+
+    base_template = 'base_admin.html' if request.user.is_staff else 'base_public.html'
+    return render(request, 'encuestas/resultados_encuesta.html', {
+        'encuesta': encuesta,
+        'resultados': resultados,
+        'total_respuestas': total_respuestas,
+        'base_template': base_template
+    })
+
+
+@login_required
+def descargar_resultados_encuesta(request, encuesta_id):
+    import openpyxl
+    from django.http import HttpResponse
+
+    encuesta = get_object_or_404(Encuesta, pk=encuesta_id)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Resultados"
+
+    # Encabezados
+    ws.append(["Usuario", "Email"] + [p.texto for p in encuesta.preguntas.all().order_by('orden')])
+
+    # Datos
+    for respuesta in RespuestaEncuesta.objects.filter(encuesta=encuesta).select_related('usuario'):
+        fila = [respuesta.usuario.username, respuesta.usuario.email]
+        for pregunta in encuesta.preguntas.all().order_by('orden'):
+            detalle = DetalleRespuesta.objects.filter(
+                respuesta=respuesta, pregunta=pregunta
+            ).first()
+            if detalle:
+                if pregunta.tipo == 'opcion_multiple' and detalle.opcion_seleccionada:
+                    fila.append(detalle.opcion_seleccionada.texto)
+                else:
+                    fila.append(detalle.texto_respuesta or '')
+            else:
+                fila.append('')
+        ws.append(fila)
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="resultados_{encuesta.titulo}.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+def eliminar_encuesta(request, encuesta_id):
+    encuesta = get_object_or_404(Encuesta, pk=encuesta_id)
+    if request.user.is_staff or encuesta.creada_por == request.user:
+        encuesta.delete()
+        messages.success(request, "Encuesta eliminada.")
+    return redirect('gestion_encuestas')

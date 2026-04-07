@@ -203,4 +203,7 @@ urlpatterns = [
     path('tienda/pago/exito/', views.pago_producto_exitoso, name='pago_producto_exitoso'),
     path('tienda/pago/fallo/', views.pago_producto_fallido, name='pago_producto_fallido'),
 
+
+    # Encuestas
+    path('encuestas/<int:encuesta_id>/responder/', views.responder_encuesta, name='responder_encuesta'),
     ]

@@ -27,7 +27,8 @@ from .views import (
     # Funciones de eventos (Ahora sí están en views.py)
     gestionar_asistencia, reporte_confirmados, descargar_pdf_confirmados, enviar_recordatorio_pendientes, 
     instituciones_coordinadores, eliminar_log_correo, eliminar_todos_logs, api_comunas, gestion_tienda, 
-    crear_producto, eliminar_producto, editar_producto
+    crear_producto, eliminar_producto, editar_producto, gestion_encuestas, crear_encuesta, ver_resultados_encuesta, 
+    descargar_resultados_encuesta, eliminar_encuesta,
 )
 
 urlpatterns = [
@@ -215,4 +216,11 @@ path('preferencias/eliminar/<int:pref_id>/', views.admin_eliminar_preferencia, n
     path('tienda/crear/', views.crear_producto, name='crear_producto'),
     path('tienda/eliminar/<int:producto_id>/', views.eliminar_producto, name='eliminar_producto'),
     path('tienda/editar/<int:producto_id>/', views.editar_producto, name='editar_producto'),
+
+    # Encuestas
+    path('encuestas/', views.gestion_encuestas, name='gestion_encuestas'),
+    path('encuestas/crear/', views.crear_encuesta, name='crear_encuesta'),
+    path('encuestas/<int:encuesta_id>/resultados/', views.ver_resultados_encuesta, name='ver_resultados_encuesta'),
+    path('encuestas/<int:encuesta_id>/descargar/', views.descargar_resultados_encuesta, name='descargar_resultados_encuesta'),
+    path('encuestas/<int:encuesta_id>/eliminar/', views.eliminar_encuesta, name='eliminar_encuesta'),
 ]
