@@ -206,4 +206,5 @@ urlpatterns = [
 
     # Encuestas
     path('encuestas/<int:encuesta_id>/responder/', views.responder_encuesta, name='responder_encuesta'),
+    path('mis-encuestas/', views.mis_encuestas, name='mis_encuestas'),
     ]

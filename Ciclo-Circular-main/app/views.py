@@ -3603,3 +3603,87 @@ def pago_producto_exitoso(request):
 def pago_producto_fallido(request):
     messages.error(request, "El pago fue rechazado. Intenta nuevamente.")
     return redirect('tienda')
+
+@login_required
+def responder_encuesta(request, encuesta_id):
+    from app.models import Encuesta, PreguntaEncuesta, RespuestaEncuesta, DetalleRespuesta
+    from django.utils import timezone
+
+    encuesta = get_object_or_404(Encuesta, pk=encuesta_id)
+
+    # Verificar que esté activa y no vencida
+    if not encuesta.activa or encuesta.fecha_vencimiento < timezone.now().date():
+        messages.error(request, "Esta encuesta ya no está disponible.")
+        return redirect('home')
+
+    # Verificar que no haya respondido ya
+    if RespuestaEncuesta.objects.filter(usuario=request.user, encuesta=encuesta).exists():
+        messages.warning(request, "Ya respondiste esta encuesta.")
+        return redirect('home')
+
+    preguntas = encuesta.preguntas.all().order_by('orden')
+
+    if request.method == 'POST':
+        respuesta = RespuestaEncuesta.objects.create(
+            usuario=request.user,
+            encuesta=encuesta
+        )
+        for pregunta in preguntas:
+            if pregunta.tipo == 'opcion_multiple':
+                opcion_id = request.POST.get(f'pregunta_{pregunta.pk}')
+                if opcion_id:
+                    from app.models import OpcionPregunta
+                    opcion = OpcionPregunta.objects.filter(pk=opcion_id).first()
+                    DetalleRespuesta.objects.create(
+                        respuesta=respuesta,
+                        pregunta=pregunta,
+                        opcion_seleccionada=opcion
+                    )
+            else:
+                texto = request.POST.get(f'pregunta_{pregunta.pk}', '')
+                DetalleRespuesta.objects.create(
+                    respuesta=respuesta,
+                    pregunta=pregunta,
+                    texto_respuesta=texto
+                )
+        messages.success(request, "¡Gracias por responder la encuesta!")
+        return render(request, 'encuestas/encuesta_enviada.html', {
+            'encuesta': encuesta
+        })
+
+    return render(request, 'encuestas/responder_encuesta.html', {
+        'encuesta': encuesta,
+        'preguntas': preguntas
+    })
+    
+@login_required
+def mis_encuestas(request):
+    from app.models import Encuesta, RespuestaEncuesta
+    from django.utils import timezone
+
+    # Obtener universidad del usuario
+    universidad = None
+    if hasattr(request.user, 'carrera') and request.user.carrera:
+        try:
+            universidad = request.user.carrera.departamento.facultad.universidad
+        except AttributeError:
+            pass
+
+    if not universidad:
+        encuestas = []
+    else:
+        hoy = timezone.now().date()
+        # Encuestas activas de su sede que no ha respondido
+        respondidas = RespuestaEncuesta.objects.filter(
+            usuario=request.user
+        ).values_list('encuesta_id', flat=True)
+
+        encuestas = Encuesta.objects.filter(
+            universidad=universidad,
+            activa=True,
+            fecha_vencimiento__gte=hoy
+        ).exclude(id__in=respondidas)
+
+    return render(request, 'encuestas/mis_encuestas.html', {
+        'encuestas': encuestas
+    })

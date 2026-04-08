@@ -1,0 +1,31 @@
+{% extends 'base_public.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <div class="pb-4 border-b border-slate-200 dark:border-slate-800">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Encuestas</h2>
+        <p class="text-sm text-slate-500">Encuestas disponibles para responder</p>
+    </div>
+
+    {% if encuestas %}
+    <div class="space-y-4">
+        {% for encuesta in encuestas %}
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6 flex justify-between items-center">
+            <div>
+                <h3 class="font-bold text-slate-800 dark:text-white">{{ encuesta.titulo }}</h3>
+                <p class="text-xs text-slate-500 mt-1">Vence: {{ encuesta.fecha_vencimiento|date:"d/m/Y" }}</p>
+            </div>
+            <a href="{% url 'responder_encuesta' encuesta.pk %}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition">
+                <i class="fa-solid fa-pencil mr-1"></i> Responder
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fa-solid fa-clipboard-check text-5xl text-slate-200 mb-4"></i>
+        <p class="text-slate-400 font-medium">No hay encuestas disponibles en este momento.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

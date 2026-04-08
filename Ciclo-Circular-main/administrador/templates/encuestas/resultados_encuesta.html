@@ -8,9 +8,12 @@
             <p class="text-sm text-slate-500">{{ encuesta.universidad.nombre }} · {{ total_respuestas }} respuestas</p>
         </div>
         <div class="flex gap-2">
-            <a href="{% url 'descargar_resultados_encuesta' encuesta.pk %}" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition">
-                <i class="fa-solid fa-download"></i> Descargar Excel
-            </a>
+            <a href="{% url 'descargar_resultados_encuesta' encuesta.pk %}" 
+                hx-boost="false"
+                target="_blank"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition">
+                    <i class="fa-solid fa-download"></i> Descargar Excel
+                </a>
             <a href="{% url 'gestion_encuestas' %}" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-100 transition">
                 <i class="fa-solid fa-arrow-left"></i> Volver
             </a>

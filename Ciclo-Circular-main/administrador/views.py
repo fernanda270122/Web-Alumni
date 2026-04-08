@@ -7808,7 +7808,17 @@ def gestion_encuestas(request):
 def crear_encuesta(request):
     if not request.user.is_staff and not request.user.es_coordinador:
         return redirect('home')
-
+    
+    # AJAX para filtrar carreras por universidad
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        action = request.POST.get('action')
+        if action == 'buscar_carreras_por_universidad':
+            uni_id = request.POST.get('id')
+            carreras = Carrera.objects.filter(
+                departamento__facultad__universidad_id=uni_id
+            ).values('pk', 'nombre').order_by('nombre')
+            return JsonResponse(list(carreras), safe=False)
+        
     if request.user.is_staff:
         universidades = Universidad.objects.all()
     else:
