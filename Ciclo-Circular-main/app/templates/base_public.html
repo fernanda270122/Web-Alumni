@@ -146,6 +146,25 @@
                     <a href="{% url 'mis_oportunidades' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-wand-magic-sparkles w-5 text-center text-purple-500"></i> Mis Oportunidades Laborales</a>
                 </div>
 
+                <div class="border-t border-white/10 my-2 pt-2">
+                    <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2">Tienda</p>
+                    <a href="{% url 'tienda' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                        <i class="fa-solid fa-store w-5 text-center text-blue-400"></i> Tienda
+                    </a>
+                </div>
+
+                <div class="border-t border-white/10 my-2 pt-2">
+                    <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2">Encuestas</p>
+                    {% if user.es_coordinador %}
+                    <a href="{% url 'gestion_encuestas' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                        <i class="fa-solid fa-clipboard-list w-5 text-center text-blue-400"></i> Gestionar Encuestas
+                    </a>
+                    {% else %}
+                    <a href="{% url 'mis_encuestas' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                        <i class="fa-solid fa-clipboard-list w-5 text-center text-blue-400"></i> Encuestas
+                    </a>
+                    {% endif %}
+                </div>
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <button type="submit" class="w-full text-left block px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-white/10 flex gap-3 border-t border-white/10 mt-2">
