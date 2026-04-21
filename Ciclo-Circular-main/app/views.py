@@ -3738,9 +3738,11 @@ def biblioteca(request):
     if request.user.is_staff:
         documentos = DocumentoBiblioteca.objects.all().order_by('-fecha')
     elif request.user.es_coordinador:
-        ocumentos = DocumentoBiblioteca.objects.filter(subido_por=request.user).order_by('-fecha')
+        documentos = DocumentoBiblioteca.objects.filter(subido_por=request.user).order_by('-fecha')
     else:
         universidad = request.user.universidad or request.user.universidad_coordinador
+    if not universidad and request.user.carrera:
+        universidad = request.user.carrera.departamento.facultad.universidad
         documentos = DocumentoBiblioteca.objects.filter(universidad=universidad).order_by('-fecha')
     universidades = Universidad.objects.all()
     return render(request, 'biblioteca/biblioteca.html', {'documentos': documentos, 'universidades': universidades})
