@@ -148,6 +148,9 @@
                 <a href="{% url 'gestion-bolsa' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
                     <i class="fa-solid fa-briefcase w-5 text-center text-slate-400"></i> Bolsa Empleo
                 </a>
+                <a href="{% url 'biblioteca' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3">
+                    <i class="fa-solid fa-book w-5 text-center text-slate-400"></i> Biblioteca
+                </a>
 
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
