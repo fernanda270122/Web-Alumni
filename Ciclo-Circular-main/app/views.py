@@ -54,7 +54,7 @@ from .models import (
     Universidad, Facultad, Departamento, Carrera, 
     Etapa, RegistroActividad, Entrada, Salida, Oportunidades, Idea, 
     CVUsuario, Oferta, Necesidad, 
-    Evento, Invitacion, PreguntaEvento, TransaccionPago, DocumentoBiblioteca
+    Evento, Invitacion, PreguntaEvento, TransaccionPago, DocumentoBiblioteca, PitchUsuario
 )
 from .forms import EntradaForm, SalidaForm, OportunidadForm
 
@@ -3763,3 +3763,39 @@ def biblioteca_eliminar(request, pk):
     if request.method == 'POST':
         doc.delete()
     return redirect('biblioteca')
+
+@login_required                                                                                                                                                                             
+def mi_pitch(request):
+        try:                                                                                                                                                                                            
+            pitch = request.user.pitch
+        except PitchUsuario.DoesNotExist:
+            pitch = None
+        return render(request, 'pitch/mi_pitch.html', {'pitch': pitch})
+
+  #Si pitch llega al template con datos → muestra el texto completo
+  #Si pitch es None → muestra el formulario vacío
+
+
+@login_required
+def mi_pitch_guardar(request):
+    if request.method == 'POST':
+        try:
+            pitch = request.user.pitch
+        except PitchUsuario.DoesNotExist:
+            pitch = PitchUsuario(usuario=request.user)
+        pitch.nombre_profesional = request.POST.get('nombre_profesional', '').strip()
+        pitch.descripcion        = request.POST.get('descripcion', '').strip()
+        pitch.problema           = request.POST.get('problema', '').strip()
+        pitch.solucion           = request.POST.get('solucion', '').strip()
+        pitch.llamada_accion     = request.POST.get('llamada_accion', '').strip()
+        pitch.save()
+    return redirect('mi_pitch')
+
+@login_required
+def mi_pitch_eliminar(request):
+    if request.method == 'POST':
+        try:
+            request.user.pitch.delete()
+        except PitchUsuario.DoesNotExist:
+            pass
+    return redirect('mi_pitch')

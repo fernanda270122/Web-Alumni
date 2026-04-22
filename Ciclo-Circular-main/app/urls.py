@@ -213,4 +213,9 @@ urlpatterns = [
     path('biblioteca/crear/', views.biblioteca_crear, name='biblioteca_crear'),                                             
     path('biblioteca/editar/<int:pk>/', views.biblioteca_editar, name='biblioteca_editar'),
     path('biblioteca/eliminar/<int:pk>/', views.biblioteca_eliminar, name='biblioteca_eliminar'),
+    
+    #PITCH                                                                                                                                                                                     
+    path('mi-pitch/', views.mi_pitch, name='mi_pitch'),
+    path('mi-pitch/guardar/', views.mi_pitch_guardar, name='mi_pitch_guardar'),                                                                                                                
+    path('mi-pitch/eliminar/', views.mi_pitch_eliminar, name='mi_pitch_eliminar'),
     ]

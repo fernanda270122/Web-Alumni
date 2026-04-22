@@ -1,0 +1,120 @@
+{% extends 'base_public.html' %}                                                                                                                                                            {% block content %}
+                                                                                                                                                                                            <div class="flex justify-center">
+<div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-xl overflow-hidden">
+
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-white/5 flex items-center justify-between">
+    <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+        <i class="fa-solid fa-microphone-lines text-primary"></i> Mi Pitch
+    </h2>
+    {% if pitch %}
+    <div class="flex gap-2">
+        <button onclick="document.getElementById('modal-editar').classList.remove('hidden')"
+                class="px-3 py-1.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-lg hover:bg-amber-200 transition">
+        <i class="fa-solid fa-pen"></i> Editar
+        </button>
+        <form method="POST" action="{% url 'mi_pitch_eliminar' %}" onsubmit="return confirm('¿Eliminar tu pitch?')">
+        {% csrf_token %}
+        <button type="submit"
+                class="px-3 py-1.5 bg-red-100 text-red-600 text-xs font-bold rounded-lg hover:bg-red-200 transition">
+            <i class="fa-solid fa-trash"></i> Eliminar
+        </button>
+        </form>
+    </div>
+    {% endif %}
+    </div>
+
+    <div class="p-6">
+    {% if pitch %}
+    <!-- TEXTO COMPLETO -->
+    <p class="text-slate-700 dark:text-slate-200 text-sm leading-relaxed">
+        Hola, soy <strong>{{ pitch.nombre_profesional }}</strong>, <strong>{{ pitch.descripcion }}</strong>.
+        He identificado que <strong>{{ pitch.problema }}</strong>, por lo que desarrollé
+        <strong>{{ pitch.solucion }}</strong>.
+        Los invito a <strong>{{ pitch.llamada_accion }}</strong>.
+    </p>
+
+    {% else %}
+    <!-- FORMULARIO -->
+    <form method="POST" action="{% url 'mi_pitch_guardar' %}" class="space-y-4">
+        {% csrf_token %}
+        <p class="text-slate-500 dark:text-slate-400 text-xs mb-4">Completa cada campo para construir tu pitch personal.</p>
+
+        <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">Hola, soy...</label>
+        <input type="text" name="nombre_profesional" required placeholder="ej: Ana García"
+                class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+        </div>
+        <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">y soy...</label>
+        <input type="text" name="descripcion" required placeholder="ej: diseñadora con enfoque en emprendimiento social"
+                class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+        </div>
+        <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">He identificado que...</label>
+        <textarea name="problema" required rows="2" placeholder="ej: muchas personas no tienen acceso a herramientas de diseño accesibles"
+                    class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none"></textarea>
+        </div>
+        <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">Por lo que desarrollé...</label>
+        <textarea name="solucion" required rows="2" placeholder="ej: una guía práctica y gratuita para crear interfaces sin conocimientos técnicos"
+                    class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none"></textarea>
+        </div>
+        <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">Los invito a...</label>
+        <input type="text" name="llamada_accion" required placeholder="ej: conectar, colaborar o conversar sobre este proyecto"
+                class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+        </div>
+
+        <button type="submit"
+                class="w-full py-2 bg-primary text-white font-bold text-xs rounded-lg hover:bg-primaryHover transition">
+        Guardar Pitch
+        </button>
+    </form>
+    {% endif %}
+    </div>
+</div>
+</div>
+
+<!-- MODAL EDITAR -->
+{% if pitch %}
+<div id="modal-editar" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+<div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl w-full max-w-xl mx-4 p-6">
+    <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Editar Pitch</h3>
+    <form method="POST" action="{% url 'mi_pitch_guardar' %}" class="space-y-4">
+    {% csrf_token %}
+    <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">Hola, soy...</label>
+        <input type="text" name="nombre_profesional" required value="{{ pitch.nombre_profesional }}"
+                class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+    </div>
+    <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">y soy...</label>
+        <input type="text" name="descripcion" required value="{{ pitch.descripcion }}"
+                class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+    </div>
+    <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">He identificado que...</label>
+        <textarea name="problema" required rows="2"
+                class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">{{ pitch.problema }}</textarea>
+    </div>
+    <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">Por lo que desarrollé...</label>
+        <textarea name="solucion" required rows="2"
+                class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">{{ pitch.solucion }}</textarea>
+    </div>
+    <div>
+        <label class="text-xs font-bold text-slate-500 uppercase">Los invito a...</label>
+        <input type="text" name="llamada_accion" required value="{{ pitch.llamada_accion }}"
+                class="mt-1 w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
+    </div>
+    <div class="flex gap-3 pt-2">
+        <button type="submit" class="flex-1 py-2 bg-primary text-white font-bold text-xs rounded-lg hover:bg-primaryHover transition">Guardar</button>
+        <button type="button" onclick="document.getElementById('modal-editar').classList.add('hidden')"
+                class="flex-1 py-2 border border-gray-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition">Cancelar</button>
+    </div>
+    </form>
+</div>
+</div>
+{% endif %}
+
+{% endblock %}

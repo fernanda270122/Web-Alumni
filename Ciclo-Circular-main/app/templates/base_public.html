@@ -137,7 +137,7 @@
                     <i class="fa-solid fa-crown w-5 text-center text-amber-500"></i> Mi Membresía
                 </a>
                 
-                <a href="#" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-microphone-lines w-5 text-center text-primary"></i> Mi Pitch</a>
+                <a href="{% url 'mi_pitch' %}"class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-solid fa-microphone-lines w-5 text-center text-primary"></i> Mi Pitch</a>
                 <a href="{% url 'ver_calendario' %}" class="block px-4 py-3 rounded-lg text-sm font-medium text-white hover:bg-white/10 flex gap-3"><i class="fa-regular fa-calendar w-5 text-center text-primary"></i> Mi Calendario</a>
                 
                 <div class="border-t border-white/10 my-2 pt-2">
@@ -250,7 +250,7 @@
                             <i class="fa-solid fa-handshake w-5 text-center group-hover:text-blue-500 transition"></i> 
                             <span class="font-medium">Ofrezco / Necesito</span>
                         </a>
-                        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5">
+                        <a href="{% url 'mi_pitch' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5">
                             <i class="fa-solid fa-microphone-lines w-5 text-center"></i> <span class="font-medium">Mi Pitch</span>
                         </a>
                         <a href="{% url 'ver_calendario' %}" class="flex items-center gap-4 px-4 py-3 rounded-xl transition group nav-item {% if request.resolver_match.url_name == 'ver_calendario' %}nav-active{% else %}text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5{% endif %}">

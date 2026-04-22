@@ -478,3 +478,15 @@ class DocumentoBiblioteca(models.Model):
 
     def __str__(self):
         return f"{self.numero_documento} - {self.titulo}"
+    
+class PitchUsuario(models.Model):                                                                                                                                                               
+    usuario            = models.OneToOneField('user.Usuario', on_delete=models.CASCADE, related_name='pitch')
+    nombre_profesional = models.CharField(max_length=200)                                                                                                                                       
+    descripcion        = models.CharField(max_length=300)
+    problema           = models.TextField()
+    solucion           = models.TextField()
+    llamada_accion     = models.CharField(max_length=300)
+    actualizado        = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Pitch de {self.usuario.username}"
